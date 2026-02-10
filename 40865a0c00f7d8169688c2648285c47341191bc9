@@ -1,0 +1,137 @@
+crates/attractor-pipeline/src/graph.rs
+  0722a99bea0354c7 1-422
+crates/attractor-tools/src/builtin/shell.rs
+  0722a99bea0354c7 1-63
+crates/attractor-llm/src/anthropic.rs
+  0722a99bea0354c7 1-680
+crates/attractor-llm/src/provider.rs
+  0722a99bea0354c7 1-179
+crates/attractor-pipeline/src/handler.rs
+  0722a99bea0354c7 1-295
+Cargo.toml
+  0722a99bea0354c7 1-29
+crates/attractor-pipeline/src/engine.rs
+  0722a99bea0354c7 1-487
+crates/attractor-agent/src/subagent.rs
+  0722a99bea0354c7 1-162
+crates/attractor-agent/src/prompt_builder.rs
+  0722a99bea0354c7 1-348
+crates/attractor-tools/src/truncation.rs
+  0722a99bea0354c7 1-78
+crates/attractor-tools/src/builtin/glob.rs
+  0722a99bea0354c7 1-66
+crates/attractor-pipeline/src/events.rs
+  0722a99bea0354c7 1-172
+crates/attractor-pipeline/src/transforms.rs
+  0722a99bea0354c7 1-198
+crates/attractor-pipeline/src/handlers/mod.rs
+  0722a99bea0354c7 1-290
+crates/attractor-pipeline/src/retry.rs
+  0722a99bea0354c7 1-295
+crates/attractor-pipeline/src/goal_gate.rs
+  0722a99bea0354c7 1-276
+crates/attractor-agent/src/fidelity.rs
+  0722a99bea0354c7 1-159
+crates/attractor-llm/src/types.rs
+  0722a99bea0354c7 1-423
+crates/attractor-llm/src/openai.rs
+  0722a99bea0354c7 1-660
+crates/attractor-tools/src/local_env.rs
+  0722a99bea0354c7 1-488
+crates/attractor-tools/src/builtin/edit_file.rs
+  0722a99bea0354c7 1-125
+crates/attractor-tools/src/profiles.rs
+  0722a99bea0354c7 1-118
+crates/attractor-types/Cargo.toml
+  0722a99bea0354c7 1-17
+crates/attractor-tools/src/environment.rs
+  0722a99bea0354c7 1-61
+crates/attractor-pipeline/src/checkpoint.rs
+  0722a99bea0354c7 1-166
+crates/attractor-llm/src/client.rs
+  0722a99bea0354c7 1-593
+crates/attractor-pipeline/src/stylesheet.rs
+  0722a99bea0354c7 1-440
+crates/attractor-cli/src/main.rs
+  0722a99bea0354c7 1-169
+crates/attractor-pipeline/src/interviewer.rs
+  0722a99bea0354c7 1-198
+crates/attractor-agent/src/loop_detection.rs
+  0722a99bea0354c7 1-179
+crates/attractor-tools/src/builtin/grep.rs
+  0722a99bea0354c7 1-74
+crates/attractor-agent/Cargo.toml
+  0722a99bea0354c7 1-22
+crates/attractor-dot/Cargo.toml
+  0722a99bea0354c7 1-12
+crates/attractor-pipeline/src/handlers/wait_human.rs
+  0722a99bea0354c7 1-202
+crates/attractor-pipeline/src/handlers/manager.rs
+  0722a99bea0354c7 1-120
+crates/attractor-llm/Cargo.toml
+  0722a99bea0354c7 1-18
+crates/attractor-dot/src/ast.rs
+  0722a99bea0354c7 1-47
+crates/attractor-tools/Cargo.toml
+  0722a99bea0354c7 1-20
+crates/attractor-tools/src/builtin/read_file.rs
+  0722a99bea0354c7 1-84
+crates/attractor-llm/src/gemini.rs
+  0722a99bea0354c7 1-633
+crates/attractor-llm/src/lib.rs
+  0722a99bea0354c7 1-7,9-14,16-18
+crates/attractor-agent/src/lib.rs
+  0722a99bea0354c7 1-1004
+crates/attractor-dot/src/duration_serde.rs
+  0722a99bea0354c7 1-39
+crates/attractor-dot/src/parser.rs
+  0722a99bea0354c7 1-564
+crates/attractor-pipeline/src/condition.rs
+  0722a99bea0354c7 1-258
+crates/attractor-pipeline/src/edge_selection.rs
+  0722a99bea0354c7 1-233
+crates/attractor-pipeline/src/lib.rs
+  0722a99bea0354c7 1-24,26-44
+crates/attractor-pipeline/src/handlers/parallel.rs
+  0722a99bea0354c7 1-148
+crates/attractor-pipeline/tests/integration.rs
+  0722a99bea0354c7 1-705
+crates/attractor-dot/src/lib.rs
+  0722a99bea0354c7 1-303
+crates/attractor-types/src/lib.rs
+  0722a99bea0354c7 1-824
+crates/attractor-cli/Cargo.toml
+  0722a99bea0354c7 1-19
+crates/attractor-pipeline/src/validation.rs
+  0722a99bea0354c7 1-651
+crates/attractor-tools/src/tool.rs
+  0722a99bea0354c7 1-73
+crates/attractor-tools/src/builtin/mod.rs
+  0722a99bea0354c7 1-15
+crates/attractor-pipeline/Cargo.toml
+  0722a99bea0354c7 1-16,18,20-29
+crates/attractor-tools/src/lib.rs
+  0722a99bea0354c7 1-323
+crates/attractor-tools/src/builtin/write_file.rs
+  0722a99bea0354c7 1-64
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.1",
+  "base_commit_sha": "40865a0c00f7d8169688c2648285c47341191bc9",
+  "prompts": {
+    "0722a99bea0354c7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d397eb39-a8e9-4019-bc33-43988adc1304",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 14701,
+      "total_deletions": 321,
+      "accepted_lines": 14377,
+      "overriden_lines": 1
+    }
+  }
+}
