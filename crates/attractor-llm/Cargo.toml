@@ -1,0 +1,18 @@
+[package]
+name = "attractor-llm"
+version = "0.1.0"
+edition = "2021"
+description = "Unified LLM client with multi-provider support (OpenAI, Anthropic, Gemini)"
+
+[dependencies]
+attractor-types = { path = "../attractor-types" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+reqwest = { workspace = true }
+futures-core = { workspace = true }
+tokio-stream = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+uuid = { workspace = true }
+async-trait = { workspace = true }

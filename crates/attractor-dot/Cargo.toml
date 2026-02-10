@@ -1,0 +1,12 @@
+[package]
+name = "attractor-dot"
+version = "0.1.0"
+edition = "2021"
+description = "DOT parser for the strict Graphviz subset used by Attractor pipelines"
+
+[dependencies]
+attractor-types = { path = "../attractor-types" }
+winnow = "0.7"
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }

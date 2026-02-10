@@ -1,0 +1,19 @@
+[package]
+name = "attractor-cli"
+version = "0.1.0"
+edition = "2021"
+description = "CLI binary for running and validating Attractor pipelines"
+
+[dependencies]
+attractor-types = { path = "../attractor-types" }
+attractor-dot = { path = "../attractor-dot" }
+attractor-llm = { path = "../attractor-llm" }
+attractor-tools = { path = "../attractor-tools" }
+attractor-agent = { path = "../attractor-agent" }
+attractor-pipeline = { path = "../attractor-pipeline" }
+clap = { workspace = true }
+tokio = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+serde_json = { workspace = true }
