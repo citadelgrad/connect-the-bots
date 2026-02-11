@@ -148,22 +148,54 @@ fn cmd_info(path: &std::path::Path) -> anyhow::Result<()> {
 
 async fn cmd_run(
     path: &std::path::Path,
-    _workdir: Option<&std::path::Path>,
+    workdir: Option<&std::path::Path>,
     _logs: &std::path::Path,
     dry_run: bool,
 ) -> anyhow::Result<()> {
     let graph = load_pipeline(path)?;
 
     println!("Running pipeline: {}", graph.name);
+    if !graph.goal.is_empty() {
+        println!("Goal: {}", graph.goal);
+    }
     if dry_run {
         println!("(dry run mode -- no LLM calls)");
     }
 
+    // Set up the pipeline context with workdir
+    let context = attractor_types::Context::new();
+    if let Some(dir) = workdir {
+        let abs = std::fs::canonicalize(dir)?;
+        context
+            .set(
+                "workdir",
+                serde_json::Value::String(abs.to_string_lossy().into_owned()),
+            )
+            .await;
+        println!("Working directory: {}", abs.display());
+    }
+    if dry_run {
+        context
+            .set("dry_run", serde_json::Value::Bool(true))
+            .await;
+    }
+
     let executor = attractor_pipeline::PipelineExecutor::with_default_registry();
-    let result = executor.run(&graph).await?;
+    let result = executor.run_with_context(&graph, context).await?;
 
     println!("\nPipeline completed");
     println!("Completed nodes: {:?}", result.completed_nodes);
+
+    // Print cost summary
+    let total_cost: f64 = result
+        .final_context
+        .iter()
+        .filter(|(k, _)| k.ends_with(".cost_usd"))
+        .filter_map(|(_, v)| v.as_f64())
+        .sum();
+    if total_cost > 0.0 {
+        println!("Total cost: ${:.4}", total_cost);
+    }
 
     Ok(())
 }

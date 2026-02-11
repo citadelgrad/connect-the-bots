@@ -80,11 +80,20 @@ impl PipelineExecutor {
 
     /// Run the full 5-phase pipeline lifecycle on the given graph.
     pub async fn run(&self, graph: &PipelineGraph) -> Result<PipelineResult> {
+        self.run_with_context(graph, Context::new()).await
+    }
+
+    /// Run the pipeline with a pre-seeded context (e.g. workdir, dry_run).
+    pub async fn run_with_context(
+        &self,
+        graph: &PipelineGraph,
+        context: Context,
+    ) -> Result<PipelineResult> {
         // Phase 2: Validate
         validate_or_raise(graph)?;
 
-        // Phase 3: Initialize
-        let context = Context::new();
+        // Phase 3: Initialize (merge graph attrs into existing context)
+        let context = context;
         for (key, val) in &graph.attrs {
             context.set(key, attr_to_json(val)).await;
         }
@@ -308,8 +317,8 @@ mod tests {
     // Test 4: Context updates from one node visible to next (verify via final_context)
     #[tokio::test]
     async fn context_updates_propagate() {
-        // The codergen handler sets "last_prompt" in context_updates.
-        // We verify it shows up in final_context.
+        // The codergen handler (Claude Code) sets context_updates with
+        // "<node_id>.completed", "<node_id>.result", etc.
         let graph = parse_graph(
             r#"digraph G {
                 start [shape="Mdiamond"]
@@ -321,10 +330,16 @@ mod tests {
         let executor = PipelineExecutor::with_default_registry();
         let result = executor.run(&graph).await.unwrap();
 
-        // The codergen handler puts the prompt into context_updates["<node_id>.prompt"]
+        // The codergen handler marks the node as completed
         assert_eq!(
-            result.final_context.get("step.prompt"),
-            Some(&serde_json::Value::String("Generate code".into())),
+            result.final_context.get("step.completed"),
+            Some(&serde_json::Value::Bool(true)),
+        );
+        // The codergen handler stores the Claude response in "<node_id>.result"
+        assert!(
+            result.final_context.contains_key("step.result"),
+            "Expected step.result in final context, keys: {:?}",
+            result.final_context.keys().collect::<Vec<_>>()
         );
         // The engine also sets "outcome" in context
         assert_eq!(
