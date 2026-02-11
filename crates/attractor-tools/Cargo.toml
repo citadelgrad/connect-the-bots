@@ -2,6 +2,7 @@
 name = "attractor-tools"
 version = "0.1.0"
 edition = "2021"
+license.workspace = true
 description = "Tool trait, built-in tools, and execution environment for Attractor agents"
 
 [dependencies]

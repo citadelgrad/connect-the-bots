@@ -2,6 +2,7 @@
 name = "attractor-llm"
 version = "0.1.0"
 edition = "2021"
+license.workspace = true
 description = "Unified LLM client with multi-provider support (OpenAI, Anthropic, Gemini)"
 
 [dependencies]
