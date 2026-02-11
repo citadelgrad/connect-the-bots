@@ -1,0 +1,40 @@
+crates/attractor-pipeline/src/engine.rs
+  0722a99bea0354c7 83-91,95-96,320-321,333,335-342
+crates/attractor-pipeline/src/handlers/mod.rs
+  0722a99bea0354c7 77-91,96-110,120,126-195,197-200,202-204,206-210,212-242,244-250,252-274,280-297,304-308,314-333,335,441-444,448-451,455-459,461-465
+crates/attractor-cli/src/main.rs
+  0722a99bea0354c7 151,158-160,165-175,177-181,184,189-198
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.1",
+  "base_commit_sha": "2ac2da62fe61f45169aff50f5642c42c13e47f51",
+  "prompts": {
+    "0722a99bea0354c7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d397eb39-a8e9-4019-bc33-43988adc1304",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 312,
+      "total_deletions": 88,
+      "accepted_lines": 299,
+      "overriden_lines": 0
+    },
+    "617b1c638887420e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2a808bae-fce9-423f-ae3e-cb9af582ab75",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 339,
+      "total_deletions": 0,
+      "accepted_lines": 339,
+      "overriden_lines": 0
+    }
+  }
+}
