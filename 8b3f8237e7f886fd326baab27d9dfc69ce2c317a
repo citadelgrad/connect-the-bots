@@ -1,0 +1,23 @@
+.gitignore
+  b7b70653b5752d81 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.1",
+  "base_commit_sha": "8b3f8237e7f886fd326baab27d9dfc69ce2c317a",
+  "prompts": {
+    "b7b70653b5752d81": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "175b5920-416d-4371-89d5-dd2dc6df6172",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 0,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}
