@@ -2,6 +2,9 @@ mod app;
 mod components;
 mod pages;
 
+#[cfg(feature = "ssr")]
+pub mod server;
+
 pub use app::App;
 
 #[cfg(feature = "hydrate")]

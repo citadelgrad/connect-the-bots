@@ -1,15 +1,18 @@
 use leptos::prelude::*;
 
 #[component]
-pub fn MarkdownPane(
+pub fn MarkdownPane<F>(
     #[prop(into)] title: String,
-    #[prop(into)] content: String,
-) -> impl IntoView {
+    content: F,
+) -> impl IntoView
+where
+    F: Fn() -> String + Send + 'static,
+{
     view! {
         <div class="markdown-pane">
             <h2 class="pane-title">{title}</h2>
             <div class="markdown-content">
-                <pre>{content}</pre>
+                <pre>{move || content()}</pre>
             </div>
         </div>
     }
