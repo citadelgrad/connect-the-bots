@@ -1,0 +1,45 @@
+[package]
+name = "attractor-web"
+version = "0.2.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+leptos = { version = "0.7", default-features = false }
+leptos_router = { version = "0.7", default-features = false }
+leptos_meta = { version = "0.7", default-features = false }
+leptos_config = { version = "0.7" }
+leptos_axum = { version = "0.7" }
+axum = "0.7"
+tokio = { workspace = true, features = ["rt-multi-thread"] }
+tower = "0.5"
+tower-http = { version = "0.6", features = ["fs"] }
+wasm-bindgen = { version = "0.2", optional = true }
+console_error_panic_hook = { version = "0.1", optional = true }
+serde = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+[features]
+default = ["ssr"]
+hydrate = [
+    "leptos/hydration",
+    "dep:wasm-bindgen",
+    "dep:console_error_panic_hook",
+]
+ssr = [
+    "leptos/ssr",
+]
+
+[package.metadata.leptos]
+output-name = "attractor-web"
+site-root = "target/site"
+site-pkg-dir = "pkg"
+style-file = "style/main.scss"
+site-addr = "127.0.0.1:3000"
+reload-port = 3001
+browserquery = "defaults"
+bin-features = ["ssr"]
+lib-features = ["hydrate"]

@@ -8,6 +8,7 @@ members = [
     "crates/attractor-agent",
     "crates/attractor-pipeline",
     "crates/attractor-cli",
+    "crates/attractor-web",
 ]
 
 [workspace.package]
