@@ -124,6 +124,21 @@ pub fn EditorPage() -> impl IntoView {
                     content=move || spec_content.get()
                 />
             </div>
+
+            {move || {
+                if let Some(sid) = session_id() {
+                    view! {
+                        <div class="execute-section">
+                            <a href=format!("/execution?session_id={}", sid)>
+                                <button class="execute-button">"Execute Pipeline →"</button>
+                            </a>
+                        </div>
+                    }
+                    .into_any()
+                } else {
+                    view! { <div></div> }.into_any()
+                }
+            }}
         </div>
     }
 }

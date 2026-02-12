@@ -10,6 +10,7 @@ pub struct GenerateResponse {
 }
 
 /// Stream event from claude CLI's `--output-format stream-json`
+#[cfg(feature = "ssr")]
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct StreamEvent {
     #[serde(rename = "type")]
@@ -162,6 +163,7 @@ Write in markdown format. Start with "# PRD" header and use "# Technical Specifi
 ///
 /// Looks for "# Technical Specification" header to separate the two documents.
 /// Falls back to splitting at midpoint if header not found.
+#[cfg(feature = "ssr")]
 fn split_prd_and_spec(text: &str) -> (String, String) {
     // Look for "# Technical Specification" header (case-insensitive)
     let spec_markers = [

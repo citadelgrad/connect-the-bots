@@ -1,11 +1,7 @@
 use leptos::prelude::*;
 use leptos_router::hooks::use_navigate;
 
-#[cfg(feature = "ssr")]
 use crate::server::generate_prd_spec;
-
-#[cfg(not(feature = "ssr"))]
-use leptos::server_fn::client::generate_prd_spec;
 
 #[component]
 pub fn ChatInput() -> impl IntoView {

@@ -27,6 +27,10 @@ futures = { version = "0.3", optional = true }
 lazy_static = { version = "1.4", optional = true }
 gloo-net = { version = "0.6", features = ["eventsource"], optional = true }
 uuid = { version = "1.0", features = ["v4", "serde", "js"] }
+attractor-pipeline = { path = "../attractor-pipeline", optional = true }
+attractor-dot = { path = "../attractor-dot", optional = true }
+attractor-types = { path = "../attractor-types", optional = true }
+chrono = { workspace = true, optional = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "process", "io-util"], optional = true }
@@ -50,6 +54,10 @@ ssr = [
     "dep:tokio-stream",
     "dep:futures",
     "dep:lazy_static",
+    "dep:attractor-pipeline",
+    "dep:attractor-dot",
+    "dep:attractor-types",
+    "dep:chrono",
 ]
 
 [package.metadata.leptos]

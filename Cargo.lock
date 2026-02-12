@@ -238,7 +238,11 @@ dependencies = [
 name = "attractor-web"
 version = "0.2.0"
 dependencies = [
+ "attractor-dot",
+ "attractor-pipeline",
+ "attractor-types",
  "axum",
+ "chrono",
  "console_error_panic_hook",
  "futures",
  "gloo-net",
