@@ -1,0 +1,17 @@
+docs/guide.md
+  0722a99bea0354c7 1-740
+pipelines/build-beads-integration.dot
+  57e76b74ea39025d 1-205
+docs/cli-reference.md
+  0722a99bea0354c7 1-330
+README.md
+  0722a99bea0354c7 74-85
+docs/examples/epic-runner.dot
+  0722a99bea0354c7 1-139
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.2",
+  "base_commit_sha": "7d129226890f1fa2603368f0dbdccbb964e6ee49",
+  "prompts": {}
+}
