@@ -88,11 +88,21 @@ impl HandlerRegistry {
     /// 1. Explicit `type` attribute on the node
     /// 2. Shape-based mapping
     /// 3. Default: `"codergen"`
+    ///
+    /// Special case: conditional nodes with a prompt are routed to `"codergen"`
+    /// so the prompt actually gets executed via Claude. The `ConditionalHandler`
+    /// is a pass-through for pure routing nodes with no prompt.
     pub fn resolve_type(&self, node: &PipelineNode) -> String {
         if let Some(ref t) = node.node_type {
+            if t == "conditional" && node.prompt.is_some() {
+                return "codergen".to_string();
+            }
             return t.clone();
         }
         if let Some(t) = self.shape_to_type.get(&node.shape) {
+            if t == "conditional" && node.prompt.is_some() {
+                return "codergen".to_string();
+            }
             return t.clone();
         }
         "codergen".to_string()
@@ -239,6 +249,32 @@ mod tests {
     fn resolve_type_defaults_to_codergen() {
         let reg = HandlerRegistry::new();
         let node = make_node("x", "unknown_shape", None);
+        assert_eq!(reg.resolve_type(&node), "codergen");
+    }
+
+    #[test]
+    fn resolve_type_conditional_without_prompt_stays_conditional() {
+        let reg = HandlerRegistry::new();
+        // Diamond with no prompt → conditional (pass-through)
+        let node = make_node("check", "diamond", None);
+        assert_eq!(reg.resolve_type(&node), "conditional");
+    }
+
+    #[test]
+    fn resolve_type_conditional_with_prompt_becomes_codergen() {
+        let reg = HandlerRegistry::new();
+        // Diamond with a prompt → codergen (needs LLM to run the prompt)
+        let mut node = make_node("check", "diamond", None);
+        node.prompt = Some("Check if tasks remain".to_string());
+        assert_eq!(reg.resolve_type(&node), "codergen");
+    }
+
+    #[test]
+    fn resolve_type_explicit_conditional_with_prompt_becomes_codergen() {
+        let reg = HandlerRegistry::new();
+        // Explicit node_type="conditional" with a prompt → codergen
+        let mut node = make_node("check", "diamond", Some("conditional"));
+        node.prompt = Some("Check if tasks remain".to_string());
         assert_eq!(reg.resolve_type(&node), "codergen");
     }
 
