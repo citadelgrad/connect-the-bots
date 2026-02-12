@@ -71,6 +71,18 @@ attractor info pipeline.dot
 attractor run pipeline.dot --dry-run
 ```
 
+## Documentation
+
+- **[docs/cli-reference.md](docs/cli-reference.md)** — CLI commands, flags, examples, and environment setup
+- **[docs/guide.md](docs/guide.md)** — Full user guide covering:
+
+- DOT file syntax and all node/edge attributes
+- Conditional routing, goal gates, and stylesheets
+- Pipeline patterns (linear, verify/fixup loop, branching, feature implementation)
+- Beads integration for issue-driven development
+- Writing effective prompts and controlling costs
+- Adding Attractor to your project
+
 ## Environment Variables
 
 Set API keys for the LLM providers you use:

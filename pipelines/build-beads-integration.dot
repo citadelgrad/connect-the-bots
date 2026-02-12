@@ -1,0 +1,205 @@
+digraph BuildBeadsIntegration {
+    label="Build Beads Integration for Attractor CLI"
+    goal="Implement all child tasks of epic attractor-asr: add plan/decompose/scaffold CLI commands, PRD and spec templates, WaitHumanHandler registration, and plan-to-execute meta-pipeline."
+    model="sonnet"
+
+    start [shape="Mdiamond"]
+    done  [shape="Msquare"]
+
+    // =========================================================================
+    // Pick the next ready task from the epic
+    // =========================================================================
+    pick_task [
+        shape="diamond"
+        label="Pick Next Task"
+        node_type="conditional"
+        llm_model="haiku"
+        allowed_tools="Bash(bd:*)"
+        prompt="Run: bd show attractor-asr
+Look at the BLOCKS section to see child tasks and their statuses.
+
+Then run: bd ready
+Find the first ready (unblocked, open) child task of epic attractor-asr.
+
+If you find one:
+- Run: bd update <task-id> --status=in_progress
+- Write the task ID and full description to .attractor/current_task.md
+- Respond with MORE on the last line
+
+If all child tasks are closed (no more ready tasks for this epic):
+- Respond with DONE on the last line"
+    ]
+
+    // =========================================================================
+    // Investigate — read-only exploration before making changes
+    // =========================================================================
+    investigate [
+        shape="box"
+        label="Investigate"
+        allowed_tools="Read,Grep,Glob,Bash(bd:*),Bash(cargo:*),Bash(ls:*)"
+        prompt="Read .attractor/current_task.md to get the current task ID and description.
+Run bd show <task-id> to get full details.
+
+This is a Rust project at /Volumes/qwiizlab/projects/attractor with this structure:
+  crates/attractor-cli/src/main.rs     — CLI binary (clap commands: Run, Validate, Info)
+  crates/attractor-pipeline/src/       — Pipeline engine, handlers, validation
+    handler.rs                         — NodeHandler trait, HandlerRegistry, default_registry()
+    handlers/mod.rs                    — CodergenHandler, ToolHandler, WaitHumanHandler, etc.
+    handlers/wait_human.rs             — WaitHumanHandler (needs Arc<dyn Interviewer>)
+    interviewer.rs                     — Interviewer trait, ConsoleInterviewer, AutoApproveInterviewer
+    engine.rs                          — PipelineExecutor
+    lib.rs                             — Public re-exports
+  crates/attractor-dot/                — DOT parser
+  crates/attractor-types/              — Context, Outcome, error types
+  templates/                           — Template files (attractor.md, beads.md)
+  docs/examples/epic-runner.dot        — Epic runner pipeline template
+
+Investigate the codebase to understand what needs to change for this specific task:
+- Find the relevant files, functions, and existing patterns
+- Understand the current code structure
+- Identify exactly what needs to change
+
+Write your findings to .attractor/investigation.md including:
+- Files to modify (with full paths)
+- Current behavior/code to change
+- Required changes with specifics
+- Existing patterns to follow
+- Any risks or dependencies"
+    ]
+
+    // =========================================================================
+    // Implement — make the changes
+    // =========================================================================
+    implement [
+        shape="box"
+        label="Implement"
+        prompt="Read .attractor/current_task.md for the task and .attractor/investigation.md for the plan.
+
+Implement the changes described. This is a Rust project — follow existing code patterns and conventions.
+
+Key conventions:
+- CLI commands use clap derives in crates/attractor-cli/src/main.rs
+- Handler registration happens in default_registry() in crates/attractor-pipeline/src/handler.rs
+- Templates go in the templates/ directory at the project root
+- DOT pipeline files follow Graphviz digraph syntax with attractor-specific attributes
+- Use async_trait for handler implementations
+- Re-exports go in crates/attractor-pipeline/src/lib.rs
+
+For template files (markdown, DOT): create them directly with proper content.
+For Rust code: follow the existing patterns in the file you're modifying.
+
+Keep changes minimal and focused on the task requirements."
+    ]
+
+    // =========================================================================
+    // Build & test — compile and run tests
+    // =========================================================================
+    run_tests [
+        shape="box"
+        label="Build & Test"
+        prompt="Read .attractor/current_task.md to understand what was changed.
+
+Run the build and test suite:
+1. cargo build --workspace  (must compile cleanly)
+2. cargo test -p attractor-pipeline  (existing tests must pass)
+3. cargo test -p attractor-dot  (parser tests must pass)
+4. If the task added a new CLI command, run: cargo run -p attractor-cli -- --help  (verify it shows up)
+5. If the task created a DOT file, run: cargo run -p attractor-cli -- validate <path-to-dot-file>  (must validate)
+6. If the task created a template file, verify it exists and has content
+
+If tests or build fail, fix the issues and re-run until green.
+Write the results to .attractor/test-results.md"
+    ]
+
+    // =========================================================================
+    // Verify — review the changes
+    // =========================================================================
+    verify [
+        shape="diamond"
+        label="Verify"
+        node_type="conditional"
+        prompt="Read .attractor/current_task.md for the task requirements.
+Check the changes:
+1. Review the git diff for this task's changes
+2. Verify cargo build --workspace succeeds
+3. Verify cargo test --workspace succeeds
+4. Read .attractor/test-results.md for test outcomes
+5. Check that the task's description requirements are fully met
+
+If everything looks good, respond with PASS on the last line.
+If there are problems, respond with FAIL on the last line."
+    ]
+
+    // =========================================================================
+    // Fixup — address verification failures
+    // =========================================================================
+    fixup [
+        shape="box"
+        label="Fix Issues"
+        prompt="Read .attractor/current_task.md and .attractor/investigation.md for context.
+The verification step found problems. Fix any:
+- Compilation errors
+- Failing tests
+- Missing functionality from the task description
+- Lint or formatting issues
+
+Re-run cargo build --workspace && cargo test --workspace after fixing."
+    ]
+
+    // =========================================================================
+    // Close this task — commit and mark done
+    // =========================================================================
+    close_task [
+        shape="box"
+        label="Close Task"
+        allowed_tools="Bash(bd:*),Bash(git:*)"
+        prompt="Read .attractor/current_task.md to get the task ID.
+1. Stage the relevant changed files (be specific, don't use git add -A):
+   - For template tasks: git add templates/<filename>
+   - For CLI tasks: git add crates/attractor-cli/src/main.rs
+   - For handler tasks: git add crates/attractor-pipeline/src/handler.rs crates/attractor-pipeline/src/lib.rs
+   - For DOT files: git add pipelines/<filename> or templates/<filename>
+2. Commit with a descriptive message referencing the task ID, e.g.:
+   git commit -m 'Add PRD template (attractor-dcu)'
+3. Close the task: bd close <task-id> --reason='Implemented successfully'
+4. Run: bd sync --flush-only"
+    ]
+
+    // =========================================================================
+    // Check if more tasks remain in the epic
+    // =========================================================================
+    check_remaining [
+        shape="diamond"
+        label="More Tasks?"
+        node_type="conditional"
+        llm_model="haiku"
+        allowed_tools="Bash(bd:*)"
+        prompt="Run: bd show attractor-asr
+Look at the BLOCKS section. Count how many child tasks are still open.
+
+Run: bd ready
+Check if any remaining child tasks of epic attractor-asr are ready (unblocked, open).
+
+If there are more ready tasks, respond with MORE on the last line.
+If all tasks are closed or remaining tasks are blocked, respond with DONE on the last line."
+    ]
+
+    // =========================================================================
+    // Edges
+    // =========================================================================
+    start -> pick_task
+
+    pick_task -> investigate [label="MORE", condition="preferred_label=MORE"]
+    pick_task -> done        [label="DONE", condition="preferred_label=DONE"]
+
+    investigate -> implement -> run_tests -> verify
+
+    verify -> close_task [label="PASS", condition="preferred_label=PASS"]
+    verify -> fixup      [label="FAIL", condition="preferred_label=FAIL"]
+    fixup  -> verify
+
+    close_task -> check_remaining
+
+    check_remaining -> pick_task [label="MORE", condition="preferred_label=MORE", loop_restart=true]
+    check_remaining -> done      [label="DONE", condition="preferred_label=DONE"]
+}
