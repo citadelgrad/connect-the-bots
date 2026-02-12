@@ -224,10 +224,60 @@ impl PipelineExecutor {
 mod tests {
     use super::*;
     use crate::graph::PipelineGraph;
+    use crate::handler::{HandlerRegistry, NodeHandler, StartHandler, ExitHandler, ConditionalHandler};
+    use async_trait::async_trait;
 
     fn parse_graph(dot: &str) -> PipelineGraph {
         let parsed = attractor_dot::parse(dot).unwrap();
         PipelineGraph::from_dot(parsed).unwrap()
+    }
+
+    /// A mock codergen handler that returns Success without shelling out to Claude CLI.
+    struct MockCodergenHandler;
+
+    #[async_trait]
+    impl NodeHandler for MockCodergenHandler {
+        fn handler_type(&self) -> &str {
+            "codergen"
+        }
+        async fn execute(
+            &self,
+            node: &crate::graph::PipelineNode,
+            _ctx: &Context,
+            _graph: &PipelineGraph,
+        ) -> Result<Outcome> {
+            let mut updates = HashMap::new();
+            updates.insert(
+                format!("{}.completed", node.id),
+                serde_json::Value::Bool(true),
+            );
+            updates.insert(
+                format!("{}.result", node.id),
+                serde_json::Value::String("mock result".into()),
+            );
+            Ok(Outcome {
+                status: StageStatus::Success,
+                preferred_label: None,
+                suggested_next_ids: vec![],
+                context_updates: updates,
+                notes: "mock codergen".into(),
+                failure_reason: None,
+            })
+        }
+    }
+
+    /// Build a test registry with mock codergen handler (no real CLI calls).
+    fn test_registry() -> HandlerRegistry {
+        let mut reg = HandlerRegistry::new();
+        reg.register(StartHandler);
+        reg.register(ExitHandler);
+        reg.register(ConditionalHandler);
+        reg.register(MockCodergenHandler);
+        reg
+    }
+
+    fn test_executor() -> PipelineExecutor {
+        PipelineExecutor::new(test_registry())
     }
 
     // Test 1: Linear pipeline (start -> A -> exit) completes successfully
@@ -241,7 +291,7 @@ mod tests {
                 start -> process -> done
             }"#,
         );
-        let executor = PipelineExecutor::with_default_registry();
+        let executor = test_executor();
         let result = executor.run(&graph).await.unwrap();
 
         assert_eq!(result.completed_nodes, vec!["start", "process", "done"]);
@@ -265,7 +315,7 @@ mod tests {
     // Test 2: Branching pipeline routes based on conditions
     #[tokio::test]
     async fn branching_pipeline_routes_on_condition() {
-        // The codergen handler returns Success, so outcome=success.
+        // The mock codergen handler returns Success, so outcome=success.
         // Edge to "yes_path" has condition="outcome=success", so it should be taken.
         let graph = parse_graph(
             r#"digraph G {
@@ -281,7 +331,7 @@ mod tests {
                 no_path -> done
             }"#,
         );
-        let executor = PipelineExecutor::with_default_registry();
+        let executor = test_executor();
         let result = executor.run(&graph).await.unwrap();
 
         assert!(result.completed_nodes.contains(&"yes_path".to_string()));
@@ -298,7 +348,7 @@ mod tests {
                 process -> done
             }"#,
         );
-        let executor = PipelineExecutor::with_default_registry();
+        let executor = test_executor();
         let result = executor.run(&graph).await;
 
         assert!(result.is_err());
@@ -317,7 +367,7 @@ mod tests {
     // Test 4: Context updates from one node visible to next (verify via final_context)
     #[tokio::test]
     async fn context_updates_propagate() {
-        // The codergen handler (Claude Code) sets context_updates with
+        // The mock codergen handler sets context_updates with
         // "<node_id>.completed", "<node_id>.result", etc.
         let graph = parse_graph(
             r#"digraph G {
@@ -327,15 +377,15 @@ mod tests {
                 start -> step -> done
             }"#,
         );
-        let executor = PipelineExecutor::with_default_registry();
+        let executor = test_executor();
         let result = executor.run(&graph).await.unwrap();
 
-        // The codergen handler marks the node as completed
+        // The mock handler marks the node as completed
         assert_eq!(
             result.final_context.get("step.completed"),
             Some(&serde_json::Value::Bool(true)),
         );
-        // The codergen handler stores the Claude response in "<node_id>.result"
+        // The mock handler stores a result in "<node_id>.result"
         assert!(
             result.final_context.contains_key("step.result"),
             "Expected step.result in final context, keys: {:?}",
@@ -351,13 +401,8 @@ mod tests {
     // Test 5: Goal gate failure with retry target loops back
     #[tokio::test]
     async fn goal_gate_failure_with_retry_loops_back() {
-        // We cannot easily make a handler fail on first call and succeed on second
-        // with the default registry. Instead, we test that goal gate checking works
-        // by having a goal gate node that succeeds (so no loop occurs) and verifying
-        // the exit is reached.
-        //
-        // For a more thorough test of the retry path, we'd need a custom handler.
-        // Here we at least verify the goal gate path doesn't error when gates are satisfied.
+        // The mock handler returns success, so goal gate is satisfied and no loop occurs.
+        // Here we verify the goal gate path doesn't error when gates are satisfied.
         let graph = parse_graph(
             r#"digraph G {
                 start [shape="Mdiamond"]
@@ -366,10 +411,10 @@ mod tests {
                 start -> review -> done
             }"#,
         );
-        let executor = PipelineExecutor::with_default_registry();
+        let executor = test_executor();
         let result = executor.run(&graph).await.unwrap();
 
-        // Goal gate is satisfied (codergen returns success), so pipeline completes
+        // Goal gate is satisfied (mock returns success), so pipeline completes
         assert!(result.completed_nodes.contains(&"done".to_string()));
     }
 

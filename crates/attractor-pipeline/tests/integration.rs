@@ -26,9 +26,55 @@ fn build_graph(dot: &str) -> PipelineGraph {
     PipelineGraph::from_dot(parsed).expect("PipelineGraph::from_dot failed")
 }
 
-/// Build an executor with the default handler registry.
+/// A mock codergen handler that returns Success without shelling out to Claude CLI.
+/// This allows integration tests to run fast and without external dependencies.
+struct MockCodergenHandler;
+
+#[async_trait]
+impl NodeHandler for MockCodergenHandler {
+    fn handler_type(&self) -> &str {
+        "codergen"
+    }
+    async fn execute(
+        &self,
+        node: &PipelineNode,
+        _ctx: &Context,
+        _graph: &PipelineGraph,
+    ) -> attractor_types::Result<Outcome> {
+        let mut updates = HashMap::new();
+        updates.insert(
+            format!("{}.completed", node.id),
+            serde_json::Value::Bool(true),
+        );
+        updates.insert(
+            format!("{}.result", node.id),
+            serde_json::Value::String("mock result".into()),
+        );
+        if let Some(ref prompt) = node.prompt {
+            updates.insert(
+                format!("{}.prompt", node.id),
+                serde_json::Value::String(prompt.clone()),
+            );
+        }
+        Ok(Outcome {
+            status: StageStatus::Success,
+            preferred_label: None,
+            suggested_next_ids: vec![],
+            context_updates: updates,
+            notes: "mock codergen".into(),
+            failure_reason: None,
+        })
+    }
+}
+
+/// Build an executor with a mock codergen handler (no real CLI calls).
 fn executor() -> PipelineExecutor {
-    PipelineExecutor::with_default_registry()
+    let mut registry = HandlerRegistry::new();
+    registry.register(StartHandler);
+    registry.register(ExitHandler);
+    registry.register(ConditionalHandler);
+    registry.register(MockCodergenHandler);
+    PipelineExecutor::new(registry)
 }
 
 // ---------------------------------------------------------------------------
