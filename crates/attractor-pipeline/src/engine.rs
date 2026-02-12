@@ -106,7 +106,37 @@ impl PipelineExecutor {
         })?;
         let mut current_node = start;
 
+        // Safety limits from context (set by CLI flags)
+        let max_budget: f64 = context
+            .get("max_budget_usd")
+            .await
+            .and_then(|v| v.as_f64())
+            .unwrap_or(f64::MAX);
+        let max_steps: u64 = context
+            .get("max_steps")
+            .await
+            .and_then(|v| v.as_u64())
+            .unwrap_or(200);
+        let mut total_cost: f64 = 0.0;
+        let mut step_count: u64 = 0;
+
         loop {
+            // Check safety limits
+            step_count += 1;
+            if step_count > max_steps {
+                tracing::error!(steps = step_count, max = max_steps, "Step limit exceeded");
+                return Err(AttractorError::Other(format!(
+                    "Pipeline exceeded maximum step count ({max_steps}). Use --max-steps to increase."
+                )));
+            }
+            if total_cost > max_budget {
+                tracing::error!(cost = total_cost, max = max_budget, "Budget exceeded");
+                return Err(AttractorError::Other(format!(
+                    "Pipeline exceeded budget (${:.2} > ${:.2}). Use --max-budget-usd to increase.",
+                    total_cost, max_budget
+                )));
+            }
+
             // Terminal check (exit node)
             if current_node.shape == "Msquare" {
                 // Check goal gates
@@ -152,6 +182,20 @@ impl PipelineExecutor {
             // Record
             completed_nodes.push(current_node.id.clone());
             node_outcomes.insert(current_node.id.clone(), outcome.clone());
+
+            // Track cost from this node
+            if let Some(cost) = outcome.context_updates.get(&format!("{}.cost_usd", current_node.id)) {
+                if let Some(c) = cost.as_f64() {
+                    total_cost += c;
+                    tracing::info!(
+                        node = %current_node.id,
+                        node_cost = c,
+                        total_cost = total_cost,
+                        budget_remaining = max_budget - total_cost,
+                        "Cost update"
+                    );
+                }
+            }
 
             // Apply context updates
             context.apply_updates(outcome.context_updates.clone()).await;
@@ -543,5 +587,101 @@ mod tests {
 
         let custom = PipelineExecutor::new(HandlerRegistry::new());
         assert!(!custom.registry.has("start"));
+    }
+
+    // Test 9: Step limit aborts runaway pipelines
+    #[tokio::test]
+    async fn step_limit_aborts_pipeline() {
+        // A pipeline with a loop that never exits will hit the step limit.
+        let graph = parse_graph(
+            r#"digraph G {
+                start [shape="Mdiamond"]
+                loop_node [shape="box", label="Loop", prompt="loop"]
+                done [shape="Msquare"]
+                start -> loop_node
+                loop_node -> loop_node [condition="outcome=success"]
+                loop_node -> done [condition="outcome=fail"]
+            }"#,
+        );
+        let executor = test_executor();
+        let context = Context::new();
+        context.set("max_steps", serde_json::json!(5)).await;
+
+        let result = executor.run_with_context(&graph, context).await;
+        assert!(result.is_err());
+        let err = result.unwrap_err().to_string();
+        assert!(
+            err.contains("maximum step count"),
+            "Expected step limit error, got: {err}"
+        );
+    }
+
+    // Test 10: Budget limit aborts pipeline when cost exceeds cap
+    #[tokio::test]
+    async fn budget_limit_aborts_pipeline() {
+        use crate::graph::PipelineNode;
+
+        /// Handler that reports a cost in its context_updates.
+        struct CostlyHandler;
+
+        #[async_trait::async_trait]
+        impl NodeHandler for CostlyHandler {
+            fn handler_type(&self) -> &str {
+                "codergen"
+            }
+            async fn execute(
+                &self,
+                node: &PipelineNode,
+                _ctx: &Context,
+                _graph: &PipelineGraph,
+            ) -> Result<Outcome> {
+                let mut updates = HashMap::new();
+                updates.insert(
+                    format!("{}.completed", node.id),
+                    serde_json::Value::Bool(true),
+                );
+                updates.insert(
+                    format!("{}.cost_usd", node.id),
+                    serde_json::json!(1.50),
+                );
+                Ok(Outcome {
+                    status: StageStatus::Success,
+                    preferred_label: None,
+                    suggested_next_ids: vec![],
+                    context_updates: updates,
+                    notes: "costly operation".into(),
+                    failure_reason: None,
+                })
+            }
+        }
+
+        let graph = parse_graph(
+            r#"digraph G {
+                start [shape="Mdiamond"]
+                step1 [shape="box", label="Step1", prompt="work"]
+                step2 [shape="box", label="Step2", prompt="work"]
+                done [shape="Msquare"]
+                start -> step1 -> step2 -> done
+            }"#,
+        );
+
+        let mut registry = HandlerRegistry::new();
+        registry.register(StartHandler);
+        registry.register(ExitHandler);
+        registry.register(ConditionalHandler);
+        registry.register(CostlyHandler);
+
+        let executor = PipelineExecutor::new(registry);
+        let context = Context::new();
+        // Budget of $2.00, but two nodes cost $1.50 each = $3.00 total
+        context.set("max_budget_usd", serde_json::json!(2.0)).await;
+
+        let result = executor.run_with_context(&graph, context).await;
+        assert!(result.is_err());
+        let err = result.unwrap_err().to_string();
+        assert!(
+            err.contains("exceeded budget"),
+            "Expected budget error, got: {err}"
+        );
     }
 }

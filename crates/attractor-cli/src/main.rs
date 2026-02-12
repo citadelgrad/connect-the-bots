@@ -33,6 +33,14 @@ enum Commands {
         /// Don't actually call LLMs (dry run)
         #[arg(long)]
         dry_run: bool,
+
+        /// Maximum total spend across all nodes (USD). Pipeline aborts if exceeded.
+        #[arg(long)]
+        max_budget_usd: Option<f64>,
+
+        /// Maximum number of node executions before aborting. Prevents runaway loops. Default: 200.
+        #[arg(long, default_value = "200")]
+        max_steps: u64,
     },
 
     /// Validate a pipeline .dot file
@@ -64,8 +72,10 @@ async fn main() -> anyhow::Result<()> {
             workdir,
             logs,
             dry_run,
+            max_budget_usd,
+            max_steps,
         } => {
-            cmd_run(&pipeline, workdir.as_deref(), &logs, dry_run).await?;
+            cmd_run(&pipeline, workdir.as_deref(), &logs, dry_run, max_budget_usd, max_steps).await?;
         }
         Commands::Validate { pipeline } => {
             cmd_validate(&pipeline)?;
@@ -151,6 +161,8 @@ async fn cmd_run(
     workdir: Option<&std::path::Path>,
     _logs: &std::path::Path,
     dry_run: bool,
+    max_budget_usd: Option<f64>,
+    max_steps: u64,
 ) -> anyhow::Result<()> {
     let graph = load_pipeline(path)?;
 
@@ -179,6 +191,18 @@ async fn cmd_run(
             .set("dry_run", serde_json::Value::Bool(true))
             .await;
     }
+
+    // Safety limits
+    if let Some(budget) = max_budget_usd {
+        context
+            .set("max_budget_usd", serde_json::json!(budget))
+            .await;
+        println!("Budget limit: ${:.2}", budget);
+    }
+    context
+        .set("max_steps", serde_json::json!(max_steps))
+        .await;
+    println!("Step limit: {}", max_steps);
 
     let executor = attractor_pipeline::PipelineExecutor::with_default_registry();
     let result = executor.run_with_context(&graph, context).await?;
