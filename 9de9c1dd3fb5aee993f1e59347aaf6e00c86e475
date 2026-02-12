@@ -1,0 +1,25 @@
+AGENTS.md
+  9fe74f29fd71390d 1-38
+crates/attractor-types/Cargo.toml
+  9fe74f29fd71390d 3
+crates/attractor-agent/Cargo.toml
+  9fe74f29fd71390d 3
+crates/attractor-llm/Cargo.toml
+  9fe74f29fd71390d 3
+crates/attractor-tools/Cargo.toml
+  9fe74f29fd71390d 3
+crates/attractor-cli/Cargo.toml
+  9fe74f29fd71390d 3
+crates/attractor-pipeline/Cargo.toml
+  9fe74f29fd71390d 3
+Cargo.toml
+  9fe74f29fd71390d 14
+crates/attractor-dot/Cargo.toml
+  9fe74f29fd71390d 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.2",
+  "base_commit_sha": "9de9c1dd3fb5aee993f1e59347aaf6e00c86e475",
+  "prompts": {}
+}
