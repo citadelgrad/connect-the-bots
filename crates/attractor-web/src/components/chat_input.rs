@@ -26,10 +26,18 @@ pub fn ChatInput() -> impl IntoView {
             match result {
                 Ok(response) => {
                     tracing::info!("Successfully generated PRD and Spec");
-                    // Navigate to editor with query params
-                    let prd_encoded = urlencoding::encode(&response.prd);
-                    let spec_encoded = urlencoding::encode(&response.spec);
-                    let url = format!("/editor?prd={}&spec={}", prd_encoded, spec_encoded);
+
+                    // Navigate with session_id for streaming, or fallback to query params
+                    let url = if let Some(session_id) = response.session_id {
+                        // Streaming mode: navigate with session_id
+                        format!("/editor?session_id={}", session_id)
+                    } else {
+                        // Fallback mode: navigate with URL-encoded content
+                        let prd_encoded = urlencoding::encode(&response.prd);
+                        let spec_encoded = urlencoding::encode(&response.spec);
+                        format!("/editor?prd={}&spec={}", prd_encoded, spec_encoded)
+                    };
+
                     navigate(&url, Default::default());
                 }
                 Err(e) => {

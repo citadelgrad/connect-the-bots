@@ -1,7 +1,7 @@
 #[cfg(feature = "ssr")]
 #[tokio::main]
 async fn main() {
-    use axum::Router;
+    use axum::{routing::get, Router};
     use leptos::config::get_configuration;
     use leptos_axum::{generate_route_list, LeptosRoutes};
     use attractor_web::App;
@@ -14,6 +14,12 @@ async fn main() {
     let routes = generate_route_list(App);
 
     let app = Router::new()
+        // Custom API routes (must come before Leptos routes)
+        .route(
+            "/api/stream/:session_id",
+            get(attractor_web::server::stream::stream_events),
+        )
+        // Leptos routes
         .leptos_routes_with_context(
             &leptos_options,
             routes,

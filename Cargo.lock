@@ -240,6 +240,9 @@ version = "0.2.0"
 dependencies = [
  "axum",
  "console_error_panic_hook",
+ "futures",
+ "gloo-net",
+ "lazy_static",
  "leptos",
  "leptos_axum",
  "leptos_config",
@@ -248,11 +251,13 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+ "tokio-stream",
  "tower",
  "tower-http",
  "tracing",
  "tracing-subscriber",
  "urlencoding",
+ "uuid",
  "wasm-bindgen",
 ]
 
@@ -2660,6 +2665,7 @@ dependencies = [
  "futures-core",
  "pin-project-lite",
  "tokio",
+ "tokio-util",
 ]
 
 [[package]]
@@ -2924,6 +2930,7 @@ checksum = "ee48d38b119b0cd71fe4141b30f5ba9c7c5d9f4e7a3a8b4a674e4b6ef789976f"
 dependencies = [
  "getrandom 0.3.4",
  "js-sys",
+ "serde_core",
  "wasm-bindgen",
 ]
 
