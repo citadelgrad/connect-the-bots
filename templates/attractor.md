@@ -8,7 +8,7 @@ This project uses **Attractor** — a DOT-based pipeline runner that executes mu
 
 ```bash
 # Binary location (build once, use everywhere)
-ATTRACTOR="/Volumes/qwiizlab/projects/attractor/target/debug/attractor-cli"
+ATTRACTOR="/Volumes/qwiizlab/projects/attractor/target/release/attractor-cli"
 
 # Validate before running
 $ATTRACTOR validate pipelines/my-pipeline.dot
@@ -63,6 +63,8 @@ digraph PipelineName {
 | `Msquare` | Exit node (exactly one) |
 | `box` | Standard task — runs Claude Code with the prompt |
 | `diamond` | Conditional — Claude's response picks the outgoing edge |
+| `hexagon` | Human gate — pauses for human approval/input |
+| `parallelogram` | Tool node — runs a shell command via `tool_command` |
 
 ### Edge routing (conditional nodes)
 
@@ -102,6 +104,35 @@ start → investigate → implement → write_tests → run_tests → verify
 - **Reference the beads issue** in the `goal=` attribute so every node has context.
 - **Use read-only tools for investigation.** `allowed_tools="Read,Grep,Glob"` prevents premature edits.
 - **Include test commands.** Don't say "run tests" — say `cd mlb_fantasy_jobs && uv run pytest tests/ -x -v -k sync_player`.
+
+### Planning workflow (PRD → Spec → Beads → Pipeline)
+
+Attractor includes commands to go from requirements to running pipeline:
+
+```bash
+# Generate a PRD or spec from a description
+$ATTRACTOR plan --prd --from-prompt "Add feature X"
+$ATTRACTOR plan --spec --from-prompt "Add feature X"
+
+# Or copy blank templates for manual editing
+$ATTRACTOR plan --prd
+$ATTRACTOR plan --spec
+
+# Decompose spec into beads epic + tasks
+$ATTRACTOR decompose .attractor/spec.md
+
+# Scaffold pipeline from the beads epic
+$ATTRACTOR scaffold <EPIC_ID>
+
+# Run it
+$ATTRACTOR run pipelines/<EPIC_ID>.dot -w .
+```
+
+There's also a meta-pipeline that chains the full workflow with human review gates:
+
+```bash
+$ATTRACTOR run templates/plan-to-execute.dot -w .
+```
 
 ### Example
 

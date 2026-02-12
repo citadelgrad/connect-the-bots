@@ -21,10 +21,13 @@ digraph CodeReview {
 ## Features
 
 - **DOT pipeline definitions** -- Standard Graphviz digraph syntax with typed attributes (strings, integers, floats, booleans, durations)
+- **Planning workflow** -- Generate PRD and spec documents from templates or AI prompts, decompose specs into beads issues, scaffold pipelines from epics
+- **Beads integration** -- Decompose specs into epics and tasks, scaffold pipelines from beads epics, close issues as pipeline nodes complete
 - **Multi-provider LLM support** -- OpenAI, Anthropic, and Gemini adapters with unified request/response types
 - **Built-in tools** -- read_file, write_file, edit_file, shell, grep, glob
 - **Agent loop** -- LLM + tool execution cycle with steering injection, follow-up queues, loop detection, and output truncation
 - **Pipeline engine** -- Graph traversal, edge selection, condition evaluation, parallel fan-out/fan-in, manager loops
+- **Human review gates** -- Pause pipeline execution for human approval at any step
 - **Goal gates** -- Enforce completion criteria before allowing pipeline exit
 - **Checkpoint/resume** -- Save and restore pipeline state mid-execution
 - **Validation** -- 12 built-in lint rules for pipeline correctness
@@ -71,6 +74,31 @@ attractor info pipeline.dot
 attractor run pipeline.dot --dry-run
 ```
 
+### Planning workflow (PRD → Spec → Beads → Pipeline)
+
+```sh
+# Generate a PRD from a prompt
+attractor plan --prd --from-prompt "Add user authentication with OAuth2"
+
+# Or copy the blank template and edit manually
+attractor plan --spec
+
+# Decompose a spec into beads epic + tasks
+attractor decompose .attractor/spec.md
+
+# Scaffold a pipeline from the beads epic
+attractor scaffold <EPIC_ID>
+
+# Run the generated pipeline
+attractor run pipelines/<EPIC_ID>.dot -w .
+```
+
+There's also a meta-pipeline that chains the full workflow end-to-end:
+
+```sh
+attractor run templates/plan-to-execute.dot -w .
+```
+
 ## Documentation
 
 - **[docs/cli-reference.md](docs/cli-reference.md)** — CLI commands, flags, examples, and environment setup
@@ -79,6 +107,7 @@ attractor run pipeline.dot --dry-run
 - DOT file syntax and all node/edge attributes
 - Conditional routing, goal gates, and stylesheets
 - Pipeline patterns (linear, verify/fixup loop, branching, feature implementation)
+- Planning workflow (PRD → spec → beads → pipeline)
 - Beads integration for issue-driven development
 - Writing effective prompts and controlling costs
 - Adding Attractor to your project
@@ -103,7 +132,7 @@ export GEMINI_API_KEY=...
 | `attractor-tools` | Tool trait, registry, built-in tools, execution environment |
 | `attractor-agent` | Agent session loop with steering and loop detection |
 | `attractor-pipeline` | Pipeline graph, engine, handlers, validation, stylesheets |
-| `attractor-cli` | CLI binary (`attractor run`, `validate`, `info`) |
+| `attractor-cli` | CLI binary (`attractor run`, `validate`, `info`, `plan`, `decompose`, `scaffold`) |
 
 ## License
 

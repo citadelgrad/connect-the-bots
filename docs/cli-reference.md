@@ -127,6 +127,120 @@ Nodes:
 
 ---
 
+### `plan` — Generate PRD or spec documents
+
+Creates a PRD (product requirements document) or technical specification from a template. Optionally uses Claude to generate content from a one-line description.
+
+```
+attractor-cli plan [OPTIONS]
+```
+
+#### Options
+
+| Option | Required | Default | Description |
+|--------|----------|---------|-------------|
+| `--prd` | One of `--prd`/`--spec` | — | Generate a PRD document |
+| `--spec` | One of `--prd`/`--spec` | — | Generate a technical specification |
+| `--from-prompt <DESC>` | No | — | Use Claude to generate the document from this description instead of copying the blank template |
+| `--output <PATH>` | No | `.attractor/prd.md` or `.attractor/spec.md` | Output file path |
+
+#### Output
+
+Copies the template or generates content and writes to the output path. Prints next steps for manual editing or beads integration.
+
+#### Examples
+
+```bash
+# Copy blank PRD template for manual editing
+attractor-cli plan --prd
+
+# Generate a PRD from a description
+attractor-cli plan --prd --from-prompt "Add OAuth2 authentication with Google and GitHub providers"
+
+# Generate a spec to a custom path
+attractor-cli plan --spec --output docs/specs/auth-spec.md
+```
+
+---
+
+### `decompose` — Convert spec to beads issues
+
+Reads a technical specification file and uses Claude to generate beads CLI commands that create an epic, child tasks, and dependencies.
+
+```
+attractor-cli decompose <SPEC_PATH> [OPTIONS]
+```
+
+#### Arguments
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `SPEC_PATH` | Yes | Path to the spec markdown file |
+
+#### Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--dry-run` | false | Print the generated `bd` commands without executing them |
+
+#### Output
+
+Creates a beads epic with child tasks and dependencies. Prints the epic ID, task count, and dependency count. On `--dry-run`, prints the shell script that would be executed.
+
+#### Examples
+
+```bash
+# Preview what would be created
+attractor-cli decompose .attractor/spec.md --dry-run
+
+# Create the epic and tasks
+attractor-cli decompose .attractor/spec.md
+
+# Decompose a spec from a custom path
+attractor-cli decompose docs/specs/auth-spec.md
+```
+
+---
+
+### `scaffold` — Generate pipeline from beads epic
+
+Creates an attractor pipeline DOT file from a beads epic. The pipeline iterates through all child tasks of the epic, implementing each one.
+
+```
+attractor-cli scaffold <EPIC_ID> [OPTIONS]
+```
+
+#### Arguments
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `EPIC_ID` | Yes | Beads epic ID (e.g., `attractor-asr`) |
+
+#### Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--output <PATH>` | `pipelines/<EPIC_ID>.dot` | Output file path |
+
+#### Output
+
+Generates a DOT pipeline file from the `epic-runner` template with the epic ID substituted. Validates the result and prints node count and validation status.
+
+#### Examples
+
+```bash
+# Scaffold a pipeline for an epic
+attractor-cli scaffold attractor-asr
+
+# Scaffold to a custom path
+attractor-cli scaffold attractor-asr --output pipelines/auth-feature.dot
+
+# Then run it
+attractor-cli run pipelines/attractor-asr.dot -w .
+```
+
+---
+
 ## Examples
 
 ### Run with a budget limit (recommended for loops)
@@ -263,6 +377,37 @@ attractor run "$PIPELINE" -w "$WORKDIR"
 ```
 
 Usage: `./run-pipeline.sh pipelines/fix-bug.dot ~/projects/my-app`
+
+### Full planning workflow (PRD → Spec → Beads → Pipeline → Execute)
+
+```bash
+# Step 1: Generate a PRD from a description
+attractor-cli plan --prd --from-prompt "Add real-time notifications via WebSockets"
+
+# Step 2: Review and edit .attractor/prd.md manually
+
+# Step 3: Generate a spec from a description (or copy template and edit)
+attractor-cli plan --spec --from-prompt "Add real-time notifications via WebSockets"
+
+# Step 4: Review and edit .attractor/spec.md manually
+
+# Step 5: Decompose spec into beads epic + tasks
+attractor-cli decompose .attractor/spec.md
+
+# Step 6: Scaffold pipeline from the epic
+attractor-cli scaffold <EPIC_ID>
+
+# Step 7: Run the pipeline
+attractor-cli run pipelines/<EPIC_ID>.dot -w .
+```
+
+### Run the meta-pipeline (automated full workflow)
+
+```bash
+attractor-cli run templates/plan-to-execute.dot -w .
+```
+
+The meta-pipeline chains all planning steps with human review gates. It generates PRD, pauses for review, generates spec, pauses for review, decomposes into beads, scaffolds the pipeline, validates, and executes.
 
 ### Compare two pipelines
 

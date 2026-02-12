@@ -15,6 +15,7 @@ Attractor is a pipeline runner for AI workflows. You define pipelines as DOT (Gr
 - [Validation Rules](#validation-rules)
 - [Edge Selection Algorithm](#edge-selection-algorithm)
 - [Pipeline Patterns](#pipeline-patterns)
+- [Planning Workflow](#planning-workflow)
 - [Integrating with Beads](#integrating-with-beads)
 - [Adding to Your Project](#adding-to-your-project)
 - [Writing Effective Prompts](#writing-effective-prompts)
@@ -69,6 +70,10 @@ attractor-cli run hello.dot -w /path/to/your/project
 ```bash
 attractor-cli validate hello.dot   # Check for errors without running
 attractor-cli info hello.dot       # Show structure (nodes, edges, goal)
+attractor-cli plan --prd           # Generate a PRD template
+attractor-cli plan --spec          # Generate a spec template
+attractor-cli decompose spec.md   # Decompose spec into beads tasks
+attractor-cli scaffold <EPIC_ID>   # Scaffold pipeline from beads epic
 ```
 
 ---
@@ -122,6 +127,7 @@ digraph PipelineName {
 | `Msquare` | **Exit node.** Pipeline completion. Exactly one required. | ExitHandler (instant) |
 | `box` | **Task node.** Runs Claude Code with the `prompt`. | CodergenHandler |
 | `diamond` | **Conditional node.** Claude's response picks the outgoing edge. | ConditionalHandler + CodergenHandler |
+| `hexagon` | **Human gate.** Pauses for human input/approval. | WaitHumanHandler |
 | `parallelogram` | **Tool node.** Runs a shell command. | ToolHandler |
 
 ### Node attributes
@@ -552,6 +558,97 @@ Run: bd sync --flush-only"]
 
 ---
 
+## Planning Workflow
+
+Attractor includes a full planning-to-execution workflow that bridges structured documents to beads issue tracking to pipeline execution.
+
+### The flow
+
+```
+write PRD → review → write spec → review → decompose → scaffold → validate → execute
+```
+
+The **PRD** captures *what and why* (goals, user stories, requirements). The **spec** captures *how* (architecture, file changes, implementation phases). The spec's phases become beads issues, which become an attractor pipeline.
+
+### Step 1: Generate documents
+
+```bash
+# Generate a PRD from a one-line description
+attractor plan --prd --from-prompt "Add real-time notifications via WebSockets"
+
+# Or copy the blank template for manual editing
+attractor plan --prd
+attractor plan --spec
+```
+
+Templates are in `templates/prd-template.md` and `templates/spec-template.md`. The PRD template includes sections for overview, goals, user stories, functional requirements, constraints, risks, and success criteria. The spec template includes architecture overview, file changes, implementation phases, configuration, testing strategy, and rollback plan.
+
+### Step 2: Decompose spec into beads issues
+
+```bash
+# Preview the beads commands that would be created
+attractor decompose .attractor/spec.md --dry-run
+
+# Create the epic and tasks
+attractor decompose .attractor/spec.md
+```
+
+This reads the spec's `## Implementation Phases` section and creates:
+- A beads epic for the overall feature
+- Child tasks for each phase/task
+- Dependencies between tasks based on phase ordering
+
+### Step 3: Scaffold and run the pipeline
+
+```bash
+# Generate a pipeline from the beads epic
+attractor scaffold <EPIC_ID>
+
+# Validate it
+attractor validate pipelines/<EPIC_ID>.dot
+
+# Run it
+attractor run pipelines/<EPIC_ID>.dot -w .
+```
+
+The scaffold command uses the `epic-runner` template, which loops through all child tasks of the epic: pick task → investigate → implement → test → verify → close → next task.
+
+### Meta-pipeline (fully automated)
+
+There's a meta-pipeline at `templates/plan-to-execute.dot` that chains the full workflow with human review gates:
+
+```bash
+attractor run templates/plan-to-execute.dot -w .
+```
+
+This pipeline:
+1. Generates a PRD → pauses for human review
+2. Generates a spec → pauses for human review
+3. Decomposes the spec into beads tasks
+4. Scaffolds a pipeline from the epic
+5. Validates the pipeline
+6. Executes the pipeline
+
+Human review gates use `hexagon` nodes (WaitHumanHandler). You approve or reject at each gate; rejection loops back to regenerate.
+
+### Human review gates
+
+Use `hexagon` nodes to pause for human input:
+
+```dot
+review [
+    shape="hexagon"
+    label="Review Changes"
+    prompt="Review the PRD at .attractor/prd.md.
+Respond 'continue' to proceed or 'reject' to regenerate."
+]
+
+review -> next_step [label="continue"]
+review -> regenerate [label="reject", condition="preferred_label=reject"]
+```
+
+---
+
 ## Integrating with Beads
 
 Attractor pipelines work well with [beads](https://github.com/Dicklesworthstone/beads_viewer) for issue tracking.
@@ -560,7 +657,7 @@ Attractor pipelines work well with [beads](https://github.com/Dicklesworthstone/
 
 1. **Find work:** `bd ready` shows issues with no blockers
 2. **Review:** `bd show <issue-id>` to get full context
-3. **Create pipeline:** Write a `.dot` file referencing the issue in the `goal`
+3. **Create pipeline:** Write a `.dot` file referencing the issue in the `goal`, or use `attractor scaffold <epic-id>`
 4. **Run:** `attractor-cli run pipelines/fix-issue.dot -w .`
 5. **The pipeline closes the issue** in its final node
 
@@ -571,6 +668,25 @@ Put the issue ID in the `goal` so every node has context:
 ```dot
 goal="Fix baseball-v3-vfd5: sync_player_data silently returns partial results as success"
 ```
+
+### Processing an entire epic
+
+Use `scaffold` to generate a pipeline that iterates through all tasks in a beads epic:
+
+```bash
+# Create pipeline from epic
+attractor scaffold my-epic-id
+
+# Run it — loops through all child tasks automatically
+attractor run pipelines/my-epic-id.dot -w .
+```
+
+The generated pipeline follows this loop for each task:
+```
+pick_task → investigate → implement → run_tests → verify → close_task → check_remaining → pick_task (loop)
+```
+
+See `templates/epic-runner.dot` for the full template.
 
 ### Closing issues in the pipeline
 
@@ -589,6 +705,17 @@ Sync: bd sync --flush-only"
 ```
 
 The `allowed_tools="Bash(bd:*),Bash(git:*)"` restricts this node to only run beads and git commands.
+
+### Full planning-to-execution workflow
+
+For a complete workflow from requirements to running code, see [Planning Workflow](#planning-workflow). The `plan`, `decompose`, and `scaffold` commands chain together:
+
+```bash
+attractor plan --spec --from-prompt "Add feature X"   # Generate spec
+attractor decompose .attractor/spec.md                 # Create beads tasks
+attractor scaffold <EPIC_ID>                           # Generate pipeline
+attractor run pipelines/<EPIC_ID>.dot -w .             # Execute
+```
 
 ---
 
