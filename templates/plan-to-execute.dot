@@ -1,0 +1,173 @@
+digraph PlanToExecute {
+    label="Plan to Execute: Generate PRD → Spec → Beads Tasks → Pipeline"
+    goal="Transform a feature description into a complete, validated pipeline with beads task tracking."
+    model="sonnet"
+
+    start [shape="Mdiamond"]
+    done  [shape="Msquare"]
+
+    // --- Generate PRD ---
+    generate_prd [
+        shape="box"
+        label="Generate PRD"
+        allowed_tools="Write"
+        prompt="Read the feature_description from context.
+
+Using the PRD template structure (see templates/prd-template.md):
+- Title and metadata (Status: Draft, Author, Created date)
+- Overview (1-2 paragraphs)
+- Goals (numbered list)
+- Non-Goals
+- User Stories (US-N format)
+- Functional Requirements (FR-N format with code examples)
+- Technical Constraints
+- Success Criteria (numbered, measurable)
+- Risks & Mitigations (table format)
+- Out of Scope
+- References
+
+Write the complete PRD to .attractor/prd.md in markdown format."
+    ]
+
+    // --- Review PRD ---
+    review_prd [
+        shape="hexagon"
+        label="Review PRD"
+        prompt="Review the generated PRD at .attractor/prd.md
+
+Does the PRD clearly capture:
+- What problem we're solving?
+- Why it matters now?
+- Specific goals and success criteria?
+- User stories with measurable outcomes?
+- Technical requirements and constraints?
+
+Respond with 'continue' to proceed to spec generation, or 'reject' to regenerate the PRD."
+    ]
+
+    // --- Generate Spec ---
+    generate_spec [
+        shape="box"
+        label="Generate Spec"
+        allowed_tools="Read,Write"
+        prompt="Read the PRD from .attractor/prd.md
+
+Using the Technical Specification template structure (see templates/spec-template.md):
+- Title and metadata (Status: Draft, PRD link)
+- Architecture Overview (high-level design, before/after)
+- File Changes (numbered list of files/components with before/after code)
+- Implementation Phases (Phase N with checkbox tasks and dependencies)
+  * CRITICAL: This section drives the beads decompose step
+  * Structure: ### Phase N: [Title] with - [ ] tasks listed
+- Configuration (environment variables, settings table)
+- Testing Strategy (unit, integration, E2E, manual tests)
+- Rollback Plan (steps to revert, verification)
+
+Write the complete spec to .attractor/spec.md in markdown format."
+    ]
+
+    // --- Review Spec ---
+    review_spec [
+        shape="hexagon"
+        label="Review Spec"
+        prompt="Review the generated Technical Specification at .attractor/spec.md
+
+Does the spec clearly describe:
+- How the feature will be architecturally implemented?
+- What files will be changed and why?
+- Specific implementation phases with clear tasks?
+- Configuration and testing requirements?
+- How to roll back if problems occur?
+
+Respond with 'continue' to proceed to task decomposition, or 'reject' to regenerate the spec."
+    ]
+
+    // --- Decompose to Beads ---
+    decompose [
+        shape="box"
+        label="Decompose to Beads"
+        allowed_tools="Read,Write,Bash(bd:*)"
+        prompt="Read the spec from .attractor/spec.md
+
+Parse the Implementation Phases section and create beads tasks:
+1. Create a beads epic: bd create --type=epic --title='[Feature Name] Epic' --priority=2
+   Copy the epic ID
+2. For each Phase in the spec:
+   - Create a phase epic: bd create --type=epic --title='Phase N: [Title]' --priority=2
+   - Add dependency: bd dep add <phase-epic> <parent-epic>
+3. For each task in each Phase:
+   - Create beads task: bd create --type=task --title='[Task description]' --priority=2
+   - Add dependency: bd dep add <task-id> <phase-epic>
+4. Write the root epic ID to .attractor/epic_id.txt
+5. Sync beads: bd sync"
+    ]
+
+    // --- Scaffold Pipeline ---
+    scaffold [
+        shape="parallelogram"
+        label="Scaffold Pipeline"
+        allowed_tools="Read,Write,Bash(sed:*)"
+        prompt="Read the epic ID from .attractor/epic_id.txt
+
+Use sed to replace EPIC_ID in the epic-runner template:
+sed 's/EPIC_ID/<epic-id>/g' templates/epic-runner.dot > .attractor/pipeline.dot
+
+This creates a ready-to-run pipeline that executes all beads tasks."
+    ]
+
+    // --- Validate Pipeline ---
+    validate_pipeline [
+        shape="parallelogram"
+        label="Validate Pipeline"
+        allowed_tools="Bash(attractor-cli:*)"
+        prompt="Run: attractor-cli validate .attractor/pipeline.dot
+
+Check for errors:
+- Missing nodes
+- Invalid shapes
+- Unresolved edge labels
+- Type mismatches
+
+If valid, proceed to execution. If invalid, fix the pipeline or respond with FAIL to regenerate."
+    ]
+
+    // --- Execute Pipeline ---
+    execute_pipeline [
+        shape="parallelogram"
+        label="Execute Pipeline"
+        allowed_tools="Bash(attractor-cli:*),Bash(bd:*)"
+        prompt="Run: attractor-cli run .attractor/pipeline.dot -w .
+
+This executes the full pipeline:
+- Picks next ready task
+- Investigates changes needed
+- Implements the changes
+- Runs tests
+- Verifies completion
+- Loops until all tasks are done
+
+Monitor output and respond with status updates."
+    ]
+
+    // --- Edges ---
+    start -> generate_prd
+
+    generate_prd -> review_prd
+
+    review_prd -> generate_prd [label="reject", condition="preferred_label=reject"]
+    review_prd -> generate_spec [label="continue"]
+
+    generate_spec -> review_spec
+
+    review_spec -> generate_spec [label="reject", condition="preferred_label=reject"]
+    review_spec -> decompose [label="continue"]
+
+    decompose -> scaffold
+
+    scaffold -> validate_pipeline
+
+    validate_pipeline -> scaffold [label="fail", condition="preferred_label=FAIL"]
+    validate_pipeline -> execute_pipeline [label="pass"]
+
+    execute_pipeline -> done
+}
