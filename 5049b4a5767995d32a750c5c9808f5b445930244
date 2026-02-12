@@ -1,0 +1,29 @@
+templates/attractor.md
+  57e76b74ea39025d 11,66-67,108-136
+docs/cli-reference.md
+  57e76b74ea39025d 130-243,381-411
+README.md
+  57e76b74ea39025d 24-25,30,77-101,110,135
+docs/guide.md
+  57e76b74ea39025d 18,73-76,130,561-651,660,672-690,709-718
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.2",
+  "base_commit_sha": "5049b4a5767995d32a750c5c9808f5b445930244",
+  "prompts": {
+    "57e76b74ea39025d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b638f538-8195-40d6-b387-ee5e53884b8e",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 335,
+      "total_deletions": 3,
+      "accepted_lines": 335,
+      "overriden_lines": 0
+    }
+  }
+}
