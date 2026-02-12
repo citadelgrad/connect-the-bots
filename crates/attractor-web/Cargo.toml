@@ -26,6 +26,7 @@ tokio-stream = { version = "0.1", features = ["sync"], optional = true }
 futures = { version = "0.3", optional = true }
 lazy_static = { version = "1.4", optional = true }
 gloo-net = { version = "0.6", features = ["eventsource"], optional = true }
+gloo-timers = { version = "0.3", features = ["futures"], optional = true }
 uuid = { version = "1.0", features = ["v4", "serde", "js"] }
 attractor-pipeline = { path = "../attractor-pipeline", optional = true }
 attractor-dot = { path = "../attractor-dot", optional = true }
@@ -45,6 +46,7 @@ hydrate = [
     "dep:wasm-bindgen",
     "dep:console_error_panic_hook",
     "dep:gloo-net",
+    "dep:gloo-timers",
 ]
 ssr = [
     "leptos/ssr",

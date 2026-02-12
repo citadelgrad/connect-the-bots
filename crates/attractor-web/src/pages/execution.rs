@@ -25,6 +25,8 @@ struct PipelineEvent {
     notes: String,
     #[serde(default)]
     message: String,
+    #[serde(default)]
+    events: Vec<String>, // For state_sync event
 }
 
 #[derive(Clone, Debug)]
@@ -51,6 +53,8 @@ pub fn ExecutionPage() -> impl IntoView {
     let (is_running, set_is_running) = signal(false);
     let (error, set_error) = signal(Option::<String>::None);
     let (has_started, set_has_started) = signal(false);
+    #[allow(unused_variables)]
+    let (reconnected, set_reconnected) = signal(false);
 
     // Connect to SSE stream when session_id is available
     Effect::new(move || {
@@ -75,47 +79,48 @@ pub fn ExecutionPage() -> impl IntoView {
                                         serde_json::from_str::<PipelineEvent>(&data_str)
                                     {
                                         match event.event_type.as_str() {
-                                            "node_start" => {
-                                                tracing::info!("Node started: {}", event.node_id);
-                                                set_execution_nodes.update(|nodes| {
-                                                    nodes.push(ExecutionNodeData {
-                                                        node_id: event.node_id.clone(),
-                                                        label: event.label.clone(),
-                                                        status: NodeStatus::InProgress,
-                                                        content: String::new(),
-                                                        cost: 0.0,
-                                                    });
-                                                });
-                                            }
-                                            "node_complete" => {
-                                                tracing::info!("Node completed: {}", event.node_id);
-                                                set_execution_nodes.update(|nodes| {
-                                                    if let Some(node) = nodes
-                                                        .iter_mut()
-                                                        .find(|n| n.node_id == event.node_id)
-                                                    {
-                                                        node.status = parse_status(&event.status);
-                                                        node.cost = event.cost_usd;
-                                                        node.content = event.notes.clone();
-                                                    }
-                                                });
-                                                set_total_cost.set(event.cost_usd);
-                                            }
-                                            "pipeline_complete" => {
-                                                tracing::info!("Pipeline complete");
-                                                set_is_running.set(false);
-                                                break;
-                                            }
-                                            "error" => {
-                                                tracing::error!(
-                                                    "Pipeline error: {}",
-                                                    event.message
+                                            "state_sync" => {
+                                                // Restore state from buffered events
+                                                tracing::info!(
+                                                    "Restoring state from {} events",
+                                                    event.events.len()
                                                 );
-                                                set_error.set(Some(event.message.clone()));
-                                                set_is_running.set(false);
-                                                break;
+                                                set_reconnected.set(true);
+
+                                                // Process each buffered event
+                                                for event_str in &event.events {
+                                                    if let Ok(evt) =
+                                                        serde_json::from_str::<PipelineEvent>(
+                                                            event_str,
+                                                        )
+                                                    {
+                                                        process_pipeline_event(
+                                                            evt,
+                                                            set_execution_nodes,
+                                                            set_total_cost,
+                                                            set_is_running,
+                                                            set_error,
+                                                        );
+                                                    }
+                                                }
+
+                                                // Clear reconnected notification after 3 seconds
+                                                let reconnected_handle = set_reconnected;
+                                                leptos::task::spawn_local(async move {
+                                                    gloo_timers::future::TimeoutFuture::new(3000)
+                                                        .await;
+                                                    reconnected_handle.set(false);
+                                                });
                                             }
-                                            _ => {}
+                                            _ => {
+                                                process_pipeline_event(
+                                                    event,
+                                                    set_execution_nodes,
+                                                    set_total_cost,
+                                                    set_is_running,
+                                                    set_error,
+                                                );
+                                            }
                                         }
                                     }
                                 }
@@ -135,7 +140,8 @@ pub fn ExecutionPage() -> impl IntoView {
 
     // Handler for Execute button
     let on_execute = move |_| {
-        if let Some(_sid) = session_id() {
+        #[allow(unused_variables)]
+        if let Some(sid) = session_id() {
             set_is_running.set(true);
             set_has_started.set(true);
             set_error.set(None);
@@ -171,6 +177,19 @@ pub fn ExecutionPage() -> impl IntoView {
     view! {
         <div class="execution-page">
             <h1>"Pipeline Execution"</h1>
+
+            {move || {
+                if reconnected.get() {
+                    view! {
+                        <div class="execution-reconnected">
+                            <p>"✓ Connection restored - state recovered"</p>
+                        </div>
+                    }
+                    .into_any()
+                } else {
+                    view! { <div></div> }.into_any()
+                }
+            }}
 
             {move || {
                 if let Some(sid) = session_id() {
@@ -263,5 +282,54 @@ fn parse_status(status: &str) -> NodeStatus {
         "Failed" => NodeStatus::Failed,
         "Skipped" => NodeStatus::Skipped,
         _ => NodeStatus::Success, // Default to success for unknown statuses
+    }
+}
+
+/// Process a pipeline event and update signals
+#[cfg(feature = "hydrate")]
+fn process_pipeline_event(
+    event: PipelineEvent,
+    set_execution_nodes: WriteSignal<Vec<ExecutionNodeData>>,
+    set_total_cost: WriteSignal<f64>,
+    set_is_running: WriteSignal<bool>,
+    set_error: WriteSignal<Option<String>>,
+) {
+    match event.event_type.as_str() {
+        "node_start" => {
+            tracing::info!("Node started: {}", event.node_id);
+            set_execution_nodes.update(|nodes| {
+                // Check if node already exists (from state restore)
+                if !nodes.iter().any(|n| n.node_id == event.node_id) {
+                    nodes.push(ExecutionNodeData {
+                        node_id: event.node_id.clone(),
+                        label: event.label.clone(),
+                        status: NodeStatus::InProgress,
+                        content: String::new(),
+                        cost: 0.0,
+                    });
+                }
+            });
+        }
+        "node_complete" => {
+            tracing::info!("Node completed: {}", event.node_id);
+            set_execution_nodes.update(|nodes| {
+                if let Some(node) = nodes.iter_mut().find(|n| n.node_id == event.node_id) {
+                    node.status = parse_status(&event.status);
+                    node.cost = event.cost_usd;
+                    node.content = event.notes.clone();
+                }
+            });
+            set_total_cost.set(event.cost_usd);
+        }
+        "pipeline_complete" => {
+            tracing::info!("Pipeline complete");
+            set_is_running.set(false);
+        }
+        "error" => {
+            tracing::error!("Pipeline error: {}", event.message);
+            set_error.set(Some(event.message.clone()));
+            set_is_running.set(false);
+        }
+        _ => {}
     }
 }

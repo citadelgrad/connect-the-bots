@@ -1,27 +1,89 @@
-// Basic styles for Attractor Web Interface
+// Attractor Web Interface Styles
+// Phase 5: Comprehensive styling with responsive design
 
+// Variables
+$primary-color: #4a90e2;
+$primary-hover: #357abd;
+$success-color: #28a745;
+$error-color: #dc3545;
+$warning-color: #ffc107;
+$text-color: #333;
+$text-muted: #666;
+$text-light: #999;
+$border-color: #ddd;
+$bg-light: #f5f5f5;
+$bg-white: #fff;
+
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 16px;
+$spacing-lg: 24px;
+$spacing-xl: 32px;
+$spacing-xxl: 48px;
+
+$breakpoint-mobile: 480px;
+$breakpoint-tablet: 768px;
+$breakpoint-desktop: 1024px;
+
+// Reset
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
+// Base styles
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     line-height: 1.6;
-    color: #333;
-    background-color: #f5f5f5;
+    color: $text-color;
+    background-color: $bg-light;
+    font-size: 16px;
 }
 
 main {
     max-width: 1400px;
     margin: 0 auto;
-    padding: 2rem;
+    padding: $spacing-xl;
+
+    @media (max-width: $breakpoint-tablet) {
+        padding: $spacing-lg;
+    }
+
+    @media (max-width: $breakpoint-mobile) {
+        padding: $spacing-md;
+    }
 }
 
+// Typography
 h1 {
-    margin-bottom: 1rem;
+    margin-bottom: $spacing-lg;
     color: #2c3e50;
+    font-size: 2rem;
+    font-weight: 600;
+
+    @media (max-width: $breakpoint-mobile) {
+        font-size: 1.5rem;
+    }
+}
+
+h2 {
+    margin-bottom: $spacing-md;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+// Buttons
+button {
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
 }
 
 // Prompt Page
@@ -30,83 +92,226 @@ h1 {
     margin: 0 auto;
 
     p {
-        margin-bottom: 1.5rem;
-        color: #666;
+        margin-bottom: $spacing-lg;
+        color: $text-muted;
     }
 }
 
 .chat-input-container {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: $spacing-md;
 }
 
 .chat-input {
     width: 100%;
-    padding: 1rem;
+    padding: $spacing-md;
     font-size: 1rem;
     font-family: inherit;
-    border: 2px solid #ddd;
+    border: 2px solid $border-color;
     border-radius: 8px;
     resize: vertical;
+    min-height: 120px;
+    transition: border-color 0.2s;
 
     &:focus {
         outline: none;
-        border-color: #4a90e2;
+        border-color: $primary-color;
+        box-shadow: 0 0 0 3px rgba($primary-color, 0.1);
+    }
+
+    @media (max-width: $breakpoint-mobile) {
+        min-height: 100px;
     }
 }
 
 .submit-button {
     align-self: flex-end;
-    padding: 0.75rem 2rem;
+    padding: $spacing-md $spacing-xl;
     font-size: 1rem;
     font-weight: 600;
-    color: white;
-    background-color: #4a90e2;
+    color: $bg-white;
+    background-color: $primary-color;
     border: none;
     border-radius: 6px;
-    cursor: pointer;
-    transition: background-color 0.2s;
+    min-width: 140px;
 
-    &:hover {
-        background-color: #357abd;
+    &:hover:not(:disabled) {
+        background-color: $primary-hover;
+    }
+
+    @media (max-width: $breakpoint-mobile) {
+        align-self: stretch;
     }
 }
 
 // Editor Page
 .editor-page {
     h1 {
-        margin-bottom: 1.5rem;
+        margin-bottom: $spacing-lg;
+    }
+}
+
+.editor-controls {
+    display: flex;
+    align-items: center;
+    gap: $spacing-md;
+    margin-bottom: $spacing-lg;
+
+    @media (max-width: $breakpoint-mobile) {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+.streaming-indicator {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    padding: $spacing-sm $spacing-md;
+    background-color: $bg-white;
+    border: 1px solid $border-color;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    color: $text-muted;
+
+    .spinner {
+        width: 16px;
+        height: 16px;
+        border: 2px solid $border-color;
+        border-top-color: $primary-color;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
     }
 }
 
 .editor-container {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 2rem;
-    margin-top: 1rem;
+    gap: $spacing-xl;
+    margin-top: $spacing-md;
+
+    @media (max-width: $breakpoint-tablet) {
+        grid-template-columns: 1fr;
+        gap: $spacing-lg;
+    }
 }
 
 .markdown-pane {
-    background-color: white;
-    border: 1px solid #ddd;
+    background-color: $bg-white;
+    border: 1px solid $border-color;
     border-radius: 8px;
-    padding: 1.5rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: $spacing-lg;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    min-height: 400px;
+
+    @media (max-width: $breakpoint-mobile) {
+        padding: $spacing-md;
+    }
 
     .pane-title {
         font-size: 1.25rem;
-        margin-bottom: 1rem;
-        padding-bottom: 0.5rem;
+        margin-bottom: $spacing-md;
+        padding-bottom: $spacing-sm;
         border-bottom: 2px solid #e0e0e0;
+        font-weight: 600;
     }
 
     .markdown-content {
+        line-height: 1.7;
+
         pre {
             white-space: pre-wrap;
             font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, monospace;
-            font-size: 0.9rem;
+            font-size: 0.875rem;
             line-height: 1.5;
+            background-color: rgba(0, 0, 0, 0.02);
+            padding: $spacing-md;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+
+        code {
+            font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, monospace;
+            background-color: rgba(0, 0, 0, 0.05);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            margin-top: $spacing-lg;
+            margin-bottom: $spacing-sm;
+        }
+
+        p {
+            margin-bottom: $spacing-md;
+        }
+
+        ul, ol {
+            margin-bottom: $spacing-md;
+            padding-left: $spacing-lg;
+        }
+
+        li {
+            margin-bottom: $spacing-xs;
+        }
+    }
+
+    &.loading {
+        .markdown-content {
+            &::after {
+                content: '';
+                display: inline-block;
+                width: 8px;
+                height: 8px;
+                background-color: $primary-color;
+                border-radius: 50%;
+                margin-left: 4px;
+                animation: blink 1s ease-in-out infinite;
+            }
+        }
+    }
+}
+
+@keyframes blink {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.3;
+    }
+}
+
+.execute-section {
+    margin-top: $spacing-xl;
+    display: flex;
+    justify-content: center;
+    padding-top: $spacing-xl;
+    border-top: 1px solid $border-color;
+
+    .execute-link {
+        text-decoration: none;
+    }
+
+    .execute-button {
+        padding: $spacing-md $spacing-xl;
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: $bg-white;
+        background-color: $success-color;
+        border: none;
+        border-radius: 6px;
+        min-width: 200px;
+
+        &:hover {
+            background-color: darken($success-color, 8%);
         }
     }
 }
@@ -114,23 +319,233 @@ h1 {
 // Execution Page
 .execution-page {
     h1 {
-        margin-bottom: 1rem;
+        margin-bottom: $spacing-lg;
     }
 
     p {
-        color: #666;
-        margin-bottom: 1.5rem;
+        color: $text-muted;
+        margin-bottom: $spacing-lg;
+    }
+}
+
+.execution-reconnected {
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    border-radius: 6px;
+    padding: $spacing-md;
+    margin-bottom: $spacing-lg;
+    color: #155724;
+    animation: slideIn 0.3s ease-out;
+
+    p {
+        margin: 0;
+        font-weight: 500;
+    }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.execution-info {
+    background-color: $bg-white;
+    border: 1px solid $border-color;
+    border-radius: 8px;
+    padding: $spacing-md;
+    margin-bottom: $spacing-lg;
+
+    p {
+        margin: 0;
+        color: $text-color;
+    }
+}
+
+.execution-error {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 8px;
+    padding: $spacing-md;
+    margin-bottom: $spacing-lg;
+    color: #721c24;
+
+    p {
+        margin: 0;
+    }
+}
+
+.execution-controls {
+    display: flex;
+    align-items: center;
+    gap: $spacing-lg;
+    margin-bottom: $spacing-xl;
+
+    @media (max-width: $breakpoint-mobile) {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+.execute-button {
+    padding: $spacing-md $spacing-xl;
+    font-size: 1rem;
+    font-weight: 600;
+    color: $bg-white;
+    background-color: $primary-color;
+    border: none;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+
+    &:hover:not(:disabled) {
+        background-color: $primary-hover;
+    }
+
+    &:disabled {
+        background-color: $text-light;
+    }
+}
+
+.cost-summary {
+    font-size: 1.125rem;
+    color: $text-color;
+
+    strong {
+        margin-right: $spacing-sm;
+    }
+}
+
+.execution-nodes {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-md;
+}
+
+// ExecutionNode Component
+.execution-node {
+    background-color: $bg-white;
+    border: 2px solid $border-color;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.2s ease;
+
+    &.pending {
+        border-color: $text-light;
+    }
+
+    &.in-progress {
+        border-color: $primary-color;
+        box-shadow: 0 0 0 3px rgba($primary-color, 0.1);
+
+        .execution-node-status {
+            color: $primary-color;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+    }
+
+    &.success {
+        border-color: $success-color;
+
+        .execution-node-status {
+            color: $success-color;
+        }
+    }
+
+    &.failed {
+        border-color: $error-color;
+
+        .execution-node-status {
+            color: $error-color;
+        }
+    }
+
+    &.skipped {
+        border-color: $text-light;
+        opacity: 0.7;
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.7;
+        transform: scale(1.1);
+    }
+}
+
+.execution-node-header {
+    display: flex;
+    align-items: center;
+    gap: $spacing-md;
+    padding: $spacing-md;
+    cursor: pointer;
+    transition: background-color 0.2s;
+
+    &:hover {
+        background-color: rgba(0, 0, 0, 0.02);
+    }
+}
+
+.execution-node-status {
+    font-size: 1.25rem;
+    font-weight: bold;
+    min-width: 24px;
+    text-align: center;
+}
+
+.execution-node-label {
+    flex: 1;
+    font-weight: 500;
+    font-size: 1rem;
+}
+
+.execution-node-cost {
+    color: $text-muted;
+    font-size: 0.875rem;
+}
+
+.execution-node-content {
+    padding: $spacing-md;
+    border-top: 1px solid $border-color;
+    background-color: rgba(0, 0, 0, 0.02);
+    animation: expandContent 0.2s ease-out;
+
+    pre {
+        white-space: pre-wrap;
+        font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, monospace;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        margin: 0;
+    }
+}
+
+@keyframes expandContent {
+    from {
+        opacity: 0;
+        max-height: 0;
+    }
+    to {
+        opacity: 1;
+        max-height: 1000px;
     }
 }
 
 .execution-placeholder {
-    background-color: white;
-    border: 1px solid #ddd;
+    background-color: $bg-white;
+    border: 1px solid $border-color;
     border-radius: 8px;
-    padding: 2rem;
+    padding: $spacing-xxl;
     text-align: center;
 
     p {
-        color: #999;
+        color: $text-light;
     }
 }

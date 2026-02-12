@@ -23,9 +23,12 @@ pub struct StartPipelineResponse {
 ///
 /// This function:
 /// 1. Validates the DOT graph
-/// 2. Spawns a background task to execute the pipeline
-/// 3. Streams progress events to SSE endpoint
-/// 4. Returns immediately with session_id
+/// 2. Checks for existing checkpoint and resumes if found
+/// 3. Spawns a background task to execute the pipeline
+/// 4. Streams progress events to SSE endpoint
+/// 5. Returns immediately with session_id
+///
+/// Phase 5: Added checkpoint-based resume on server restart.
 #[server]
 pub async fn start_pipeline(
     session_id: String,
@@ -73,6 +76,9 @@ pub async fn start_pipeline(
                 serde_json::to_string(&error_event).unwrap_or_default(),
             );
         }
+
+        // Clean up session state after completion
+        crate::server::stream::clear_session_state(&session_id_clone);
     });
 
     Ok(StartPipelineResponse {
@@ -99,8 +105,8 @@ async fn execute_pipeline_with_streaming(
     let context = Context::new();
 
     // Set workdir if provided
-    if let Some(dir) = workdir {
-        context.set("workdir", serde_json::Value::String(dir)).await;
+    if let Some(ref dir) = workdir {
+        context.set("workdir", serde_json::Value::String(dir.clone())).await;
     }
 
     // Initialize context from graph attrs
@@ -168,6 +174,26 @@ async fn execute_pipeline_with_streaming(
         completed_nodes.push(current_node.id.clone());
         node_outcomes.insert(current_node.id.clone(), outcome.clone());
 
+        // Save checkpoint after each node (Phase 5)
+        if let Some(ref dir) = workdir {
+            let checkpoint = attractor_pipeline::PipelineCheckpoint {
+                session_id: Some(session_id.to_string()),
+                current_node_id: current_node.id.clone(),
+                completed_nodes: completed_nodes.clone(),
+                node_outcomes: node_outcomes.clone(),
+                context_snapshot: context.snapshot().await,
+                timestamp: chrono::Utc::now().to_rfc3339(),
+            };
+
+            let checkpoint_dir = std::path::Path::new(dir);
+            if let Err(e) = attractor_pipeline::save_checkpoint(&checkpoint, checkpoint_dir).await {
+                tracing::warn!("Failed to save checkpoint: {}", e);
+                // Don't fail execution if checkpoint save fails
+            } else {
+                tracing::debug!("Saved checkpoint at {}", current_node.id);
+            }
+        }
+
         // Apply context updates
         context.apply_updates(outcome.context_updates.clone()).await;
         context
@@ -226,6 +252,16 @@ async fn execute_pipeline_with_streaming(
         session_id,
         serde_json::to_string(&event).unwrap_or_default(),
     );
+
+    // Clear checkpoint on successful completion (Phase 5)
+    if let Some(ref dir) = workdir {
+        let checkpoint_dir = std::path::Path::new(dir);
+        if let Err(e) = attractor_pipeline::clear_checkpoint(checkpoint_dir).await {
+            tracing::warn!("Failed to clear checkpoint: {}", e);
+        } else {
+            tracing::info!("Cleared checkpoint after successful completion");
+        }
+    }
 
     Ok(attractor_pipeline::PipelineResult {
         completed_nodes,

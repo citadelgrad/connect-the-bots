@@ -109,7 +109,15 @@ pub fn EditorPage() -> impl IntoView {
             <h1>"PRD / Spec Editor"</h1>
             {move || {
                 if is_streaming.get() {
-                    view! { <div class="streaming-indicator">"🔴 Live streaming..."</div> }.into_any()
+                    view! {
+                        <div class="editor-controls">
+                            <div class="streaming-indicator">
+                                <span class="spinner"></span>
+                                "Live streaming..."
+                            </div>
+                        </div>
+                    }
+                    .into_any()
                 } else {
                     view! { <div></div> }.into_any()
                 }
@@ -129,7 +137,7 @@ pub fn EditorPage() -> impl IntoView {
                 if let Some(sid) = session_id() {
                     view! {
                         <div class="execute-section">
-                            <a href=format!("/execution?session_id={}", sid)>
+                            <a href=format!("/execute?session_id={}", sid) class="execute-link">
                                 <button class="execute-button">"Execute Pipeline →"</button>
                             </a>
                         </div>
