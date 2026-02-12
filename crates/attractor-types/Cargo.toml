@@ -1,6 +1,6 @@
 [package]
 name = "attractor-types"
-version = "0.1.0"
+version.workspace = true
 edition = "2021"
 license.workspace = true
 description = "Shared types, errors, context, and outcome for the Attractor pipeline engine"

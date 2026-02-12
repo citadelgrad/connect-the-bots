@@ -1,6 +1,6 @@
 [package]
 name = "attractor-pipeline"
-version = "0.1.0"
+version.workspace = true
 edition = "2021"
 license.workspace = true
 description = "Pipeline execution engine, node handlers, validation, and edge selection"

@@ -1,6 +1,6 @@
 [package]
 name = "attractor-dot"
-version = "0.1.0"
+version.workspace = true
 edition = "2021"
 license.workspace = true
 description = "DOT parser for the strict Graphviz subset used by Attractor pipelines"

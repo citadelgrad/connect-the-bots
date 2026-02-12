@@ -1,6 +1,6 @@
 [package]
 name = "attractor-tools"
-version = "0.1.0"
+version.workspace = true
 edition = "2021"
 license.workspace = true
 description = "Tool trait, built-in tools, and execution environment for Attractor agents"
