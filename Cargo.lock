@@ -123,6 +123,7 @@ dependencies = [
  "attractor-pipeline",
  "attractor-tools",
  "attractor-types",
+ "chrono",
  "clap",
  "serde_json",
  "tokio",
