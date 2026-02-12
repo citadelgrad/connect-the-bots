@@ -73,6 +73,16 @@ enum Commands {
         #[arg(short, long)]
         output: Option<PathBuf>,
     },
+
+    /// Decompose a spec into beads epic and tasks
+    Decompose {
+        /// Path to the spec markdown file
+        spec_path: PathBuf,
+
+        /// Print the generated shell commands without executing them
+        #[arg(long)]
+        dry_run: bool,
+    },
 }
 
 #[tokio::main]
@@ -104,6 +114,9 @@ async fn main() -> anyhow::Result<()> {
         }
         Commands::Plan { prd, spec, from_prompt, output } => {
             cmd_plan(prd, spec, from_prompt.as_deref(), output.as_deref()).await?;
+        }
+        Commands::Decompose { spec_path, dry_run } => {
+            cmd_decompose(&spec_path, dry_run).await?;
         }
     }
 
@@ -362,6 +375,132 @@ async fn generate_with_claude(
 
     // Write generated content
     std::fs::write(output, generated_content)?;
+
+    Ok(())
+}
+
+async fn cmd_decompose(spec_path: &std::path::Path, dry_run: bool) -> anyhow::Result<()> {
+    // Read the spec file
+    let spec_content = std::fs::read_to_string(spec_path)?;
+
+    // Build prompt for Claude to generate bd commands
+    let prompt = format!(
+        "Read this technical specification and generate a shell script of beads (bd) CLI commands to create an epic and tasks.\n\n\
+        SPEC:\n{}\n\n\
+        INSTRUCTIONS:\n\
+        1. Extract the title from the spec (usually in the first heading)\n\
+        2. Extract implementation phases/tasks from the '## Implementation Phases' or similar section\n\
+        3. Create an epic first: EPIC_ID=$(bd create --title='TITLE' --type=epic --priority=P1 --description='OVERVIEW' --silent)\n\
+        4. For each task/phase: TASK_N=$(bd create --title='TITLE' --type=task --priority=PN --description='DESC' --silent)\n\
+        5. Add dependencies using: bd dep add $BLOCKED_TASK $BLOCKER_TASK (the blocked task depends on the blocker)\n\
+        6. Output ONLY executable shell commands - no markdown code fences (```), no explanations, no commentary\n\
+        7. Use set -e at the start so it fails fast on errors\n\
+        8. Echo the epic ID at the end: echo $EPIC_ID\n\
+        9. Priority should be P2 for most tasks unless critical (P1) or backlog (P3/P4)\n\
+        10. Task descriptions should be 1-2 sentences summarizing what needs to be done\n\
+        11. CRITICAL: Do NOT wrap output in markdown code fences. Start directly with 'set -e'",
+        spec_content
+    );
+
+    // Call Claude CLI with JSON output format
+    let mut cmd = tokio::process::Command::new("claude");
+    cmd.arg("-p")
+        .arg(&prompt)
+        .arg("--output-format")
+        .arg("json")
+        .arg("--dangerously-skip-permissions")
+        .arg("--no-session-persistence");
+
+    // Capture output
+    cmd.stdout(std::process::Stdio::piped());
+    cmd.stderr(std::process::Stdio::piped());
+
+    let output_result = cmd.output().await?;
+
+    if !output_result.status.success() {
+        let stderr = String::from_utf8_lossy(&output_result.stderr);
+        anyhow::bail!("Claude CLI failed: {}", stderr);
+    }
+
+    let output_json = String::from_utf8(output_result.stdout)?;
+    let parsed: serde_json::Value = serde_json::from_str(&output_json)?;
+
+    let mut shell_commands = parsed["result"]
+        .as_str()
+        .ok_or_else(|| anyhow::anyhow!("Claude output missing 'result' field"))?
+        .to_string();
+
+    // Strip markdown code fences if present
+    if shell_commands.starts_with("```") {
+        let lines: Vec<&str> = shell_commands.lines().collect();
+        if lines.len() > 2 && lines[0].starts_with("```") && lines[lines.len() - 1] == "```" {
+            shell_commands = lines[1..lines.len() - 1].join("\n");
+        }
+    }
+
+    // Prepend shebang (and set -e if not already present)
+    let full_script = if shell_commands.starts_with("set -e") {
+        format!("#!/bin/sh\n{}", shell_commands)
+    } else {
+        format!("#!/bin/sh\nset -e\n\n{}", shell_commands)
+    };
+
+    if dry_run {
+        println!("Generated shell commands (dry run):\n");
+        println!("{}", full_script);
+        return Ok(());
+    }
+
+    // Execute the shell script
+    let temp_script = std::env::temp_dir().join("attractor-decompose.sh");
+    std::fs::write(&temp_script, &full_script)?;
+
+    // Make executable
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mut perms = std::fs::metadata(&temp_script)?.permissions();
+        perms.set_mode(0o755);
+        std::fs::set_permissions(&temp_script, perms)?;
+    }
+
+    // Execute with sh -e
+    let exec_result = tokio::process::Command::new("sh")
+        .arg("-e")
+        .arg(&temp_script)
+        .output()
+        .await?;
+
+    // Clean up temp file
+    std::fs::remove_file(&temp_script).ok();
+
+    if !exec_result.status.success() {
+        let stderr = String::from_utf8_lossy(&exec_result.stderr);
+        anyhow::bail!("Shell script execution failed: {}", stderr);
+    }
+
+    let output_text = String::from_utf8(exec_result.stdout)?;
+
+    // Extract epic ID from last line of output
+    let epic_id = output_text
+        .lines()
+        .last()
+        .unwrap_or("")
+        .trim();
+
+    // Count tasks created (number of lines with TASK_N=)
+    let task_count = shell_commands.matches("TASK_").count();
+
+    // Count dependencies (number of bd dep add lines)
+    let dep_count = shell_commands.matches("bd dep add").count();
+
+    println!("✓ Decomposition complete");
+    println!("  Epic ID: {}", epic_id);
+    println!("  Tasks created: {}", task_count);
+    println!("  Dependencies: {}", dep_count);
+    println!("\nNext steps:");
+    println!("1. Review tasks: bd list");
+    println!("2. Generate pipeline: attractor scaffold {}", epic_id);
 
     Ok(())
 }
