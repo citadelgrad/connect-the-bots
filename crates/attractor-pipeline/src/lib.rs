@@ -26,8 +26,8 @@ pub use edge_selection::select_edge;
 pub use goal_gate::{check_goal_gates, enforce_goal_gates, GoalGateResult};
 pub use graph::{PipelineEdge, PipelineGraph, PipelineNode};
 pub use handler::{
-    default_registry, ConditionalHandler, DynHandler, ExitHandler, HandlerRegistry, NodeHandler,
-    StartHandler,
+    default_registry, default_registry_with_interviewer, ConditionalHandler, DynHandler, ExitHandler,
+    HandlerRegistry, NodeHandler, StartHandler,
 };
 pub use handlers::{CodergenHandler, FanInHandler, ManagerLoopHandler, ParallelHandler, ToolHandler};
 pub use handlers::wait_human::WaitHumanHandler;

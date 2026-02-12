@@ -198,6 +198,19 @@ pub fn default_registry() -> HandlerRegistry {
     reg
 }
 
+/// Create the default handler registry with WaitHumanHandler registered.
+///
+/// This factory function creates a registry with all the standard handlers
+/// plus WaitHumanHandler configured with the provided interviewer.
+/// Use this when you need to support hexagon (human review) nodes in pipelines.
+pub fn default_registry_with_interviewer(
+    interviewer: std::sync::Arc<dyn crate::interviewer::Interviewer>,
+) -> HandlerRegistry {
+    let mut reg = default_registry();
+    reg.register(crate::handlers::wait_human::WaitHumanHandler::new(interviewer));
+    reg
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------

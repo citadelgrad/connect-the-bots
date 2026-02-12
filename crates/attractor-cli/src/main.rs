@@ -204,7 +204,10 @@ async fn cmd_run(
         .await;
     println!("Step limit: {}", max_steps);
 
-    let executor = attractor_pipeline::PipelineExecutor::with_default_registry();
+    let interviewer = std::sync::Arc::new(attractor_pipeline::ConsoleInterviewer);
+    let registry =
+        attractor_pipeline::default_registry_with_interviewer(interviewer);
+    let executor = attractor_pipeline::PipelineExecutor::new(registry);
     let result = executor.run_with_context(&graph, context).await?;
 
     println!("\nPipeline completed");
