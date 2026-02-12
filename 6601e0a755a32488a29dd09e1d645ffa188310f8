@@ -1,0 +1,23 @@
+Cargo.toml
+  57e76b74ea39025d 14
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.2",
+  "base_commit_sha": "6601e0a755a32488a29dd09e1d645ffa188310f8",
+  "prompts": {
+    "57e76b74ea39025d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b638f538-8195-40d6-b387-ee5e53884b8e",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 1,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}
