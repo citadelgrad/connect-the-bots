@@ -1,0 +1,154 @@
+crates/attractor-llm/Cargo.toml
+  9fe74f29fd71390d 3
+crates/attractor-agent/Cargo.toml
+  9fe74f29fd71390d 3
+crates/attractor-pipeline/tests/integration.rs
+  b8a28bed4af2b751 29-70,72-77
+Cargo.toml
+  9fe74f29fd71390d 14
+crates/attractor-types/Cargo.toml
+  9fe74f29fd71390d 3
+crates/attractor-pipeline/src/engine.rs
+  0722a99bea0354c7 109-122,124-139,186-199
+  21592ad5b757097a 414,424,427,432,448-449,458,461
+  03093c251b1a194d 675
+  2e3e7f2575dc4a7a 395,591-674,676-686
+crates/attractor-dot/Cargo.toml
+  9fe74f29fd71390d 3
+docs/guide.md
+  0722a99bea0354c7 1-740
+crates/attractor-tools/Cargo.toml
+  9fe74f29fd71390d 3
+docs/examples/epic-runner.dot
+  0722a99bea0354c7 1-139
+README.md
+  0722a99bea0354c7 74-85
+docs/cli-reference.md
+  0722a99bea0354c7 1-330
+crates/attractor-cli/src/main.rs
+  0722a99bea0354c7 36-43,75-76,78,164-165,195-206
+crates/attractor-pipeline/src/handler.rs
+  0722a99bea0354c7 91-94,97-99,103-105,256-280
+crates/attractor-pipeline/src/handlers/mod.rs
+  6e6bd69afcb94072 34,50,52-64,69-169,175-180,496,505,518-522,542,556-589
+  0722a99bea0354c7 291
+pipelines/build-beads-integration.dot
+  57e76b74ea39025d 1-205
+crates/attractor-pipeline/Cargo.toml
+  9fe74f29fd71390d 3
+AGENTS.md
+  9fe74f29fd71390d 1-38
+crates/attractor-cli/Cargo.toml
+  9fe74f29fd71390d 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.2",
+  "base_commit_sha": "e58b1b92f644edd8d006ffce2cf7a258215ad814",
+  "prompts": {
+    "03093c251b1a194d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4b690ae8-7632-4756-ab2e-c871fe95c301",
+        "model": "unknown"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 2,
+      "total_deletions": 2,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    },
+    "0722a99bea0354c7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d397eb39-a8e9-4019-bc33-43988adc1304",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 1329,
+      "total_deletions": 3,
+      "accepted_lines": 1327,
+      "overriden_lines": 0
+    },
+    "21592ad5b757097a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c7118021-17c9-4594-bc87-61f15c569f62",
+        "model": "unknown"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 8,
+      "total_deletions": 13,
+      "accepted_lines": 8,
+      "overriden_lines": 0
+    },
+    "2e3e7f2575dc4a7a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "522579e8-9038-4b7e-bea9-def341eb268c",
+        "model": "unknown"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 97,
+      "total_deletions": 1,
+      "accepted_lines": 96,
+      "overriden_lines": 0
+    },
+    "57e76b74ea39025d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b638f538-8195-40d6-b387-ee5e53884b8e",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 205,
+      "total_deletions": 0,
+      "accepted_lines": 205,
+      "overriden_lines": 0
+    },
+    "6e6bd69afcb94072": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4c2c2652-6b98-4709-bdac-a121f31dd718",
+        "model": "unknown"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 170,
+      "total_deletions": 19,
+      "accepted_lines": 165,
+      "overriden_lines": 0
+    },
+    "9fe74f29fd71390d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bf21c402-d2e4-4724-a87e-e3499f2ee4d7",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 46,
+      "total_deletions": 7,
+      "accepted_lines": 46,
+      "overriden_lines": 0
+    },
+    "b8a28bed4af2b751": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2e13c250-92a6-42be-bb3a-b665878b2190",
+        "model": "unknown"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 48,
+      "total_deletions": 2,
+      "accepted_lines": 48,
+      "overriden_lines": 0
+    }
+  }
+}
