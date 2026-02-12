@@ -1,0 +1,23 @@
+templates/plan-to-execute.dot
+  6d245781a201bf41 1-173
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.2",
+  "base_commit_sha": "eeaea2e92d762ffc2f0c7475cdd99515a5dd1372",
+  "prompts": {
+    "6d245781a201bf41": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "49b129ef-3135-4553-aa21-7ed231fffb59",
+        "model": "unknown"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 173,
+      "total_deletions": 0,
+      "accepted_lines": 173,
+      "overriden_lines": 0
+    }
+  }
+}
