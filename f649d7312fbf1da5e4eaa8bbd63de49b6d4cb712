@@ -1,0 +1,27 @@
+crates/attractor-cli/src/main.rs
+  6d245781a201bf41 207-210
+crates/attractor-pipeline/src/handler.rs
+  6d245781a201bf41 201-213
+crates/attractor-pipeline/src/lib.rs
+  6d245781a201bf41 29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.2",
+  "base_commit_sha": "f649d7312fbf1da5e4eaa8bbd63de49b6d4cb712",
+  "prompts": {
+    "6d245781a201bf41": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "49b129ef-3135-4553-aa21-7ed231fffb59",
+        "model": "unknown"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 19,
+      "total_deletions": 3,
+      "accepted_lines": 18,
+      "overriden_lines": 0
+    }
+  }
+}
