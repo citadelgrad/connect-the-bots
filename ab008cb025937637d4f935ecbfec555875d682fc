@@ -1,0 +1,51 @@
+crates/attractor-web/src/server/generate.rs
+  e730d9b3059c5c69 9,12-20,25,28-29,31,33-35,37,39-55,57-58,61-63,67-68,74-92,95-127,129-130,134-136,138-141,143-180,182-187
+crates/attractor-web/src/main.rs
+  e730d9b3059c5c69 4,17-22
+crates/attractor-web/Cargo.toml
+  e730d9b3059c5c69 25-28,43,50-52
+  52ab728e87b29293 29,31-35,38,65
+crates/attractor-web/src/components/chat_input.rs
+  e730d9b3059c5c69 29-35,37,39-40
+crates/attractor-web/src/server/mod.rs
+  e730d9b3059c5c69 2
+crates/attractor-web/src/pages/editor.rs
+  e730d9b3059c5c69 5-19,24-105,110-116,120,124,130-154
+crates/attractor-web/src/server/stream.rs
+  e730d9b3059c5c69 1-50,54-93
+crates/attractor-pipeline/src/checkpoint.rs
+  e730d9b3059c5c69 27-29,46-64,188-224
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.2",
+  "base_commit_sha": "ab008cb025937637d4f935ecbfec555875d682fc",
+  "prompts": {
+    "52ab728e87b29293": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "51c96bf7-5334-414a-889f-b462fa8f9f47",
+        "model": "unknown"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 12,
+      "total_deletions": 6,
+      "accepted_lines": 9,
+      "overriden_lines": 0
+    },
+    "e730d9b3059c5c69": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3bb440d2-c407-4ed6-a24d-b141e2158ac0",
+        "model": "unknown"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 537,
+      "total_deletions": 137,
+      "accepted_lines": 461,
+      "overriden_lines": 1
+    }
+  }
+}
