@@ -1,3 +1,7 @@
-pub mod chat_input;
+pub mod approval_bar;
+pub mod document_viewer;
 pub mod execution_node;
-pub mod markdown_pane;
+pub mod execution_panel;
+pub mod layout;
+pub mod markdown_render;
+pub mod terminal;

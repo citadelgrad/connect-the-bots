@@ -1,11 +1,17 @@
-// These modules contain server functions that need to be available in both ssr and hydrate modes
-// The #[server] macro generates client stubs for hydrate
-pub mod generate;
-pub mod pipeline;
+pub mod execute;
 
-pub use generate::{generate_prd_spec, GenerateResponse};
-pub use pipeline::{start_pipeline, PipelineExecutionConfig, StartPipelineResponse};
-
-// The stream module is SSR-only (no client stubs needed)
+// SSR-only modules (no client stubs needed)
+#[cfg(feature = "ssr")]
+pub mod documents;
 #[cfg(feature = "ssr")]
 pub mod stream;
+#[cfg(feature = "ssr")]
+pub mod terminal;
+
+/// Shared application state accessible from Axum routes.
+#[cfg(feature = "ssr")]
+#[derive(Clone)]
+pub struct AppState {
+    pub doc_watcher: std::sync::Arc<documents::DocumentWatcher>,
+    pub attractor_dir: std::path::PathBuf,
+}

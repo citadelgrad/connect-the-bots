@@ -5,7 +5,7 @@ use leptos_router::{
     path,
 };
 
-use crate::pages::{editor::EditorPage, execution::ExecutionPage, prompt::PromptPage};
+use crate::components::layout::MainLayout;
 
 #[component]
 pub fn App() -> impl IntoView {
@@ -13,15 +13,11 @@ pub fn App() -> impl IntoView {
 
     view! {
         <Stylesheet id="leptos" href="/pkg/attractor-web.css"/>
-        <Title text="Attractor Web Interface"/>
+        <Title text="Attractor"/>
         <Router>
-            <main>
-                <Routes fallback=|| "Page not found.".into_view()>
-                    <Route path=path!("/") view=PromptPage/>
-                    <Route path=path!("/editor") view=EditorPage/>
-                    <Route path=path!("/execute") view=ExecutionPage/>
-                </Routes>
-            </main>
+            <Routes fallback=|| "Page not found.".into_view()>
+                <Route path=path!("/") view=MainLayout/>
+            </Routes>
         </Router>
     }
 }
