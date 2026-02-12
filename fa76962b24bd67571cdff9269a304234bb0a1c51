@@ -1,0 +1,23 @@
+crates/attractor-web/Cargo.toml
+  942eab853e1bebe6 14-16,34-36
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.2",
+  "base_commit_sha": "fa76962b24bd67571cdff9269a304234bb0a1c51",
+  "prompts": {
+    "942eab853e1bebe6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ef06e7c0-6558-4f5e-be3b-4d0cf94ffc99",
+        "model": "unknown"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 11,
+      "total_deletions": 8,
+      "accepted_lines": 6,
+      "overriden_lines": 0
+    }
+  }
+}
