@@ -1,0 +1,9 @@
+crates/attractor-pipeline/tests/integration.rs
+  b8a28bed4af2b751 29-70,72-77
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.2",
+  "base_commit_sha": "826d1217f8f229ff629b79bdd15370fbe321a0e9",
+  "prompts": {}
+}
