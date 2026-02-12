@@ -1,0 +1,23 @@
+templates/prd-template.md
+  9bd10ac910171dfe 1-121
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.2",
+  "base_commit_sha": "6cbee917f29612af526e46f9eccfbc96368d3e54",
+  "prompts": {
+    "9bd10ac910171dfe": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7232301f-311f-4fea-97cd-16b8f12d2e97",
+        "model": "unknown"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 121,
+      "total_deletions": 0,
+      "accepted_lines": 121,
+      "overriden_lines": 0
+    }
+  }
+}
