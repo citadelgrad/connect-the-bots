@@ -1,0 +1,25 @@
+crates/attractor-cli/Cargo.toml
+  8dc198c7b0d4b386 21
+crates/attractor-cli/src/main.rs
+  8dc198c7b0d4b386 57-75,105-107,251-367
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.2",
+  "base_commit_sha": "b553a860f9b7d34f0955b3ebdb6f833b176214a9",
+  "prompts": {
+    "8dc198c7b0d4b386": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "15620646-33d4-4e4b-967c-4e30e1f3a2af",
+        "model": "unknown"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 140,
+      "total_deletions": 0,
+      "accepted_lines": 140,
+      "overriden_lines": 0
+    }
+  }
+}
