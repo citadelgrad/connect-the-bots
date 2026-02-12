@@ -11,9 +11,9 @@ leptos = { version = "0.7", default-features = false }
 leptos_router = { version = "0.7", default-features = false }
 leptos_meta = { version = "0.7", default-features = false }
 leptos_config = { version = "0.7" }
-leptos_axum = { version = "0.7" }
-axum = "0.7"
-tokio = { workspace = true, features = ["rt-multi-thread"] }
+leptos_axum = { version = "0.7", optional = true }
+axum = { version = "0.7", optional = true }
+tokio = { version = "1", features = ["rt-multi-thread", "macros"], optional = true }
 tower = "0.5"
 tower-http = { version = "0.6", features = ["fs"] }
 wasm-bindgen = { version = "0.2", optional = true }
@@ -31,6 +31,9 @@ hydrate = [
 ]
 ssr = [
     "leptos/ssr",
+    "dep:leptos_axum",
+    "dep:axum",
+    "dep:tokio",
 ]
 
 [package.metadata.leptos]
