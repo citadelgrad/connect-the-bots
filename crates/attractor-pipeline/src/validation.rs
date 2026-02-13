@@ -58,8 +58,11 @@ fn is_valid_fidelity(val: &str) -> bool {
     if val.is_empty() {
         return false;
     }
-    // "summary:low", "summary:medium", etc. or bare prefix
+    // "summary:low", "summary:medium", "truncate:5" etc. or bare prefix
     if let Some((prefix, _suffix)) = val.split_once(':') {
+        VALID_FIDELITY_PREFIXES.contains(&prefix)
+    } else if let Some((prefix, _suffix)) = val.split_once('(') {
+        // Also accept "truncate(5)" parenthesized syntax
         VALID_FIDELITY_PREFIXES.contains(&prefix)
     } else {
         VALID_FIDELITY_PREFIXES.contains(&val)
@@ -615,7 +618,10 @@ mod tests {
         assert!(is_valid_fidelity("summary"));
         assert!(is_valid_fidelity("summary:low"));
         assert!(is_valid_fidelity("summary:medium"));
+        assert!(is_valid_fidelity("truncate(5)"));
+        assert!(is_valid_fidelity("truncate(10)"));
         assert!(!is_valid_fidelity("bogus"));
+        assert!(!is_valid_fidelity("bogus(5)"));
         assert!(!is_valid_fidelity(""));
     }
 

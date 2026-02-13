@@ -163,7 +163,14 @@ impl NodeHandler for ToolHandler {
             format!("{}\n--- stderr ---\n{}", stdout, stderr)
         };
         let notes = if combined.len() > 4096 {
-            format!("{}...(truncated)", &combined[..4096])
+            // Find a valid UTF-8 boundary at or before byte 4096
+            let truncate_at = combined
+                .char_indices()
+                .map(|(i, _)| i)
+                .take_while(|&i| i <= 4096)
+                .last()
+                .unwrap_or(0);
+            format!("{}...(truncated)", &combined[..truncate_at])
         } else {
             combined
         };

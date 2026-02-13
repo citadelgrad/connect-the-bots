@@ -2,7 +2,7 @@
 //!
 //! This crate implements the core Attractor pipeline runner: DOT graph traversal,
 //! handler dispatch, edge selection, goal gate enforcement, checkpoint/resume,
-//! and the 12 built-in lint rules.
+//! and the 11 built-in lint rules.
 
 pub mod checkpoint;
 pub mod condition;

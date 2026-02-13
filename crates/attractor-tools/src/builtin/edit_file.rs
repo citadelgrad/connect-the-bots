@@ -95,7 +95,7 @@ impl Tool for EditFileTool {
             let mut search_start = 0;
             while let Some(pos) = content[search_start..].find(old_string) {
                 let abs_pos = search_start + pos;
-                let line_num = content[..abs_pos].lines().count();
+                let line_num = content[..abs_pos].matches('\n').count() + 1;
                 occurrences.push(line_num);
                 search_start = abs_pos + old_string.len();
             }

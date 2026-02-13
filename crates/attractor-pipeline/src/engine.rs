@@ -214,12 +214,21 @@ impl PipelineExecutor {
                     .await;
             }
 
-            // Select next edge
+            // Select next edge — resolve condition keys from outcome and context
+            let ctx_snapshot = context.snapshot().await;
             let resolve = |key: &str| -> String {
                 match key {
                     "outcome" => status_to_string(outcome.status),
                     "preferred_label" => outcome.preferred_label.clone().unwrap_or_default(),
-                    _ => String::new(),
+                    _ => ctx_snapshot
+                        .get(key)
+                        .and_then(|v| match v {
+                            serde_json::Value::String(s) => Some(s.clone()),
+                            serde_json::Value::Bool(b) => Some(b.to_string()),
+                            serde_json::Value::Number(n) => Some(n.to_string()),
+                            _ => Some(v.to_string()),
+                        })
+                        .unwrap_or_default(),
                 }
             };
             let next_edge = select_edge(&current_node.id, &outcome, &resolve, graph);
@@ -575,6 +584,79 @@ mod tests {
         assert!(result.completed_nodes.contains(&"done".to_string()));
         // The handler was called twice (once fail, once success)
         assert_eq!(call_count.load(Ordering::SeqCst), 2);
+    }
+
+    // Test 8a: Context-based edge conditions are resolved from pipeline context
+    #[tokio::test]
+    async fn context_based_conditions_resolve_from_context() {
+        // A handler that sets a context key and succeeds
+        struct ContextSettingHandler;
+
+        #[async_trait]
+        impl NodeHandler for ContextSettingHandler {
+            fn handler_type(&self) -> &str {
+                "codergen"
+            }
+            async fn execute(
+                &self,
+                node: &crate::graph::PipelineNode,
+                _ctx: &Context,
+                _graph: &PipelineGraph,
+            ) -> Result<Outcome> {
+                let mut updates = HashMap::new();
+                updates.insert(
+                    format!("{}.completed", node.id),
+                    serde_json::Value::Bool(true),
+                );
+                updates.insert(
+                    "deploy_env".to_string(),
+                    serde_json::Value::String("prod".to_string()),
+                );
+                Ok(Outcome {
+                    status: StageStatus::Success,
+                    preferred_label: None,
+                    suggested_next_ids: vec![],
+                    context_updates: updates,
+                    notes: "set context".into(),
+                    failure_reason: None,
+                })
+            }
+        }
+
+        let graph = parse_graph(
+            r#"digraph G {
+                start [shape="Mdiamond"]
+                setup [shape="box", label="Setup", prompt="setup"]
+                prod_path [shape="box", label="Prod", prompt="prod"]
+                dev_path [shape="box", label="Dev", prompt="dev"]
+                done [shape="Msquare"]
+                start -> setup
+                setup -> prod_path [condition="deploy_env=prod"]
+                setup -> dev_path [condition="deploy_env=dev"]
+                prod_path -> done
+                dev_path -> done
+            }"#,
+        );
+
+        let mut registry = HandlerRegistry::new();
+        registry.register(StartHandler);
+        registry.register(ExitHandler);
+        registry.register(ConditionalHandler);
+        registry.register(ContextSettingHandler);
+
+        let executor = PipelineExecutor::new(registry);
+        let result = executor.run(&graph).await.unwrap();
+
+        // The condition "deploy_env=prod" should route to prod_path
+        assert!(
+            result.completed_nodes.contains(&"prod_path".to_string()),
+            "Expected prod_path in completed nodes, got: {:?}",
+            result.completed_nodes
+        );
+        assert!(
+            !result.completed_nodes.contains(&"dev_path".to_string()),
+            "dev_path should not be in completed nodes"
+        );
     }
 
     // Test 8: PipelineExecutor::new and with_default_registry
