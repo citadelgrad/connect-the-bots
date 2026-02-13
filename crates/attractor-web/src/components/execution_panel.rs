@@ -42,9 +42,7 @@ pub fn ExecutionPanel<F>(session_id: F) -> impl IntoView
 where
     F: Fn() -> String + Send + Sync + Copy + 'static,
 {
-    #[allow(unused_variables)]
     let (nodes, set_nodes) = signal(Vec::<NodeData>::new());
-    #[allow(unused_variables)]
     let (total_cost, set_total_cost) = signal(0.0_f64);
     let (is_running, set_is_running) = signal(true);
     let (error, set_error) = signal(Option::<String>::None);

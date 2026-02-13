@@ -1,9 +1,8 @@
 use leptos::prelude::*;
 
+#[allow(unused_imports)]
 use crate::components::markdown_render::render_markdown;
 
-#[cfg(feature = "hydrate")]
-use gloo_net::eventsource::futures::EventSource;
 #[cfg(feature = "hydrate")]
 use serde::Deserialize;
 
@@ -16,15 +15,19 @@ struct DocumentUpdate {
     content: Option<String>,
 }
 
-/// Active tab in the document viewer
+/// Active tab in the document viewer (used in narrow/tabbed mode)
 #[derive(Clone, Copy, PartialEq)]
 enum DocTab {
     Prd,
     Spec,
 }
 
-/// Tabbed document viewer that subscribes to SSE at `/api/documents/stream`
+/// Document viewer that subscribes to SSE at `/api/documents/stream`
 /// for live updates as Claude Code writes PRD/Spec files.
+///
+/// At narrow widths, PRD and Spec are shown as tabs in a single panel.
+/// At wide widths (fullscreen), each gets its own column — the parent
+/// layout switches to 3-column mode via CSS.
 #[component]
 pub fn DocumentViewer<FP, FS>(
     on_prd_change: FP,
@@ -46,9 +49,8 @@ where
                 use futures::StreamExt as _;
 
                 let url = "/api/documents/stream";
-                match EventSource::new(url) {
+                match gloo_net::eventsource::futures::EventSource::new(url) {
                     Ok(mut es) => {
-                        // Subscribe to the "document_update" event type
                         let mut stream = es.subscribe("document_update").unwrap();
 
                         while let Some(Ok((_, msg))) = stream.next().await {
@@ -67,12 +69,6 @@ where
                                         "spec" => {
                                             set_spec_content.set(content);
                                             on_spec_change(has_content);
-                                            // Auto-switch to spec tab when it appears
-                                            if has_content
-                                                && active_tab.get_untracked() == DocTab::Prd
-                                            {
-                                                set_active_tab.set(DocTab::Spec);
-                                            }
                                         }
                                         _ => {}
                                     }
@@ -94,7 +90,8 @@ where
     let spec_html = move || render_markdown(&spec_content.get());
 
     view! {
-        <div class="document-viewer">
+        // Tabbed view for narrow widths — hidden at wide breakpoint
+        <div class="document-viewer doc-tabbed">
             <div class="doc-tabs">
                 <button
                     class=move || if active_tab.get() == DocTab::Prd { "doc-tab active" } else { "doc-tab" }
@@ -141,6 +138,50 @@ where
                                 <div class="markdown-rendered" inner_html=html></div>
                             }.into_any()
                         }
+                    }
+                }}
+            </div>
+        </div>
+
+        // PRD column — visible only at wide breakpoint
+        <div class="doc-column doc-column-prd">
+            <div class="doc-column-header">"PRD"</div>
+            <div class="doc-content">
+                {move || {
+                    let html = prd_html();
+                    if html.is_empty() {
+                        view! {
+                            <div class="doc-placeholder">
+                                <p>"No PRD yet."</p>
+                                <code>"\"Create a PRD for ...\""</code>
+                            </div>
+                        }.into_any()
+                    } else {
+                        view! {
+                            <div class="markdown-rendered" inner_html=html></div>
+                        }.into_any()
+                    }
+                }}
+            </div>
+        </div>
+
+        // Spec column — visible only at wide breakpoint
+        <div class="doc-column doc-column-spec">
+            <div class="doc-column-header">"Spec"</div>
+            <div class="doc-content">
+                {move || {
+                    let html = spec_html();
+                    if html.is_empty() {
+                        view! {
+                            <div class="doc-placeholder">
+                                <p>"No Spec yet."</p>
+                                <code>"\"Now create the technical spec\""</code>
+                            </div>
+                        }.into_any()
+                    } else {
+                        view! {
+                            <div class="markdown-rendered" inner_html=html></div>
+                        }.into_any()
                     }
                 }}
             </div>

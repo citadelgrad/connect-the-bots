@@ -56,30 +56,33 @@ pub fn MainLayout() -> impl IntoView {
                 </div>
             </header>
 
-            <div class="app-panels">
+            <div class=move || {
+                let base = "app-panels";
+                if panel.get() == RightPanel::Documents { format!("{base} documents-mode") } else { base.to_string() }
+            }>
                 <div class="panel-left">
                     <Terminal />
                 </div>
 
-                <div class="panel-right">
-                    {move || match panel.get() {
-                        RightPanel::Documents => {
-                            view! {
-                                <DocumentViewer
-                                    on_prd_change=move |exists| set_prd_exists.set(exists)
-                                    on_spec_change=move |exists| set_spec_exists.set(exists)
-                                />
-                            }.into_any()
-                        }
-                        RightPanel::Execution => {
-                            view! {
+                {move || match panel.get() {
+                    RightPanel::Documents => {
+                        view! {
+                            <DocumentViewer
+                                on_prd_change=move |exists| set_prd_exists.set(exists)
+                                on_spec_change=move |exists| set_spec_exists.set(exists)
+                            />
+                        }.into_any()
+                    }
+                    RightPanel::Execution => {
+                        view! {
+                            <div class="panel-right">
                                 <ExecutionPanel
                                     session_id=move || session_id.get().unwrap_or_default()
                                 />
-                            }.into_any()
-                        }
-                    }}
-                </div>
+                            </div>
+                        }.into_any()
+                    }
+                }}
             </div>
         </div>
     }
