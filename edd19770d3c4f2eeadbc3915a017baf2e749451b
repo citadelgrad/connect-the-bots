@@ -1,0 +1,36 @@
+crates/attractor-pipeline/src/engine.rs
+  02b249974e7b3580 113
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.3",
+  "base_commit_sha": "edd19770d3c4f2eeadbc3915a017baf2e749451b",
+  "prompts": {
+    "02b249974e7b3580": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9e2ba1fb-aa13-41e0-8dac-07b7b2ce232f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 1,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    },
+    "4e35c44b348332db": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "64245824-3bce-48db-99a8-74df313c0e91",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 91,
+      "total_deletions": 82,
+      "accepted_lines": 69,
+      "overriden_lines": 0
+    }
+  }
+}
