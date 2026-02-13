@@ -26,9 +26,9 @@ enum Commands {
         #[arg(short, long)]
         workdir: Option<PathBuf>,
 
-        /// Logs output directory
-        #[arg(short, long, default_value = ".attractor/logs")]
-        logs: PathBuf,
+        /// Logs output directory (default: .attractor/logs/<pipeline>-<hash>)
+        #[arg(short, long)]
+        logs: Option<PathBuf>,
 
         /// Don't actually call LLMs (dry run)
         #[arg(long)]
@@ -114,7 +114,7 @@ async fn main() -> anyhow::Result<()> {
             max_budget_usd,
             max_steps,
         } => {
-            cmd_run(&pipeline, workdir.as_deref(), &logs, dry_run, max_budget_usd, max_steps).await?;
+            cmd_run(&pipeline, workdir.as_deref(), logs.as_deref(), dry_run, max_budget_usd, max_steps).await?;
         }
         Commands::Validate { pipeline } => {
             cmd_validate(&pipeline)?;
@@ -204,20 +204,47 @@ fn cmd_info(path: &std::path::Path) -> anyhow::Result<()> {
     Ok(())
 }
 
+/// Generate a unique logs directory name from the pipeline filename and a short random suffix.
+/// Format: `.attractor/logs/<stem>-<8hex>` e.g. `.attractor/logs/attractor-e0n-a3f1b2c9`
+fn unique_logs_dir(pipeline_path: &std::path::Path) -> PathBuf {
+    use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
+
+    let stem = pipeline_path
+        .file_stem()
+        .unwrap_or_default()
+        .to_string_lossy();
+
+    // Hash the current time + PID for uniqueness across concurrent runs
+    let mut hasher = DefaultHasher::new();
+    std::time::SystemTime::now().hash(&mut hasher);
+    std::process::id().hash(&mut hasher);
+    let hash = hasher.finish();
+
+    PathBuf::from(format!(".attractor/logs/{}-{:08x}", stem, hash as u32))
+}
+
 async fn cmd_run(
     path: &std::path::Path,
     workdir: Option<&std::path::Path>,
-    _logs: &std::path::Path,
+    logs: Option<&std::path::Path>,
     dry_run: bool,
     max_budget_usd: Option<f64>,
     max_steps: u64,
 ) -> anyhow::Result<()> {
     let graph = load_pipeline(path)?;
 
+    // Resolve logs directory: explicit flag or auto-generated unique path
+    let logs_dir = match logs {
+        Some(l) => l.to_path_buf(),
+        None => unique_logs_dir(path),
+    };
+
     println!("Running pipeline: {}", graph.name);
     if !graph.goal.is_empty() {
         println!("Goal: {}", graph.goal);
     }
+    println!("Logs: {}", logs_dir.display());
     if dry_run {
         println!("(dry run mode -- no LLM calls)");
     }

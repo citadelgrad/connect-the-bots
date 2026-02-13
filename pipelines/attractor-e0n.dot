@@ -1,0 +1,224 @@
+digraph EpicRunner {
+    label="Process all tasks in an epic"
+    goal="Implement all child tasks of epic attractor-e0n: Multi-Project Workspace with Document Persistence. # Multi-Project Workspace with Document Persistence
+
+## Vision
+
+Transform the attractor-web app from a single-project, single-directory tool into a daemon-style
+multi-project workspace. The user launches one instance of the web server (background), opens the
+browser, and manages multiple project folders simultaneously — each with its own Claude Code terminal,
+live document viewer (PRD/Spec), and execution pipeline.
+
+## Why This Matters
+
+Currently the web app is hardcoded to watch `.attractor/` relative to the server's cwd. This means:
+- You must cd into a project directory before starting the server
+- You can only work on one project at a time
+- Closing the browser loses all document state (PRD/Spec)
+- Restarting the server means starting from scratch
+
+The goal is to make the web interface a persistent development environment where:
+- The server runs as a background daemon, independent of any project
+- Multiple projects are open simultaneously with their own terminals and doc panels
+- PRD/Spec content persists across browser closes and server restarts via SQLite
+- Session management (open/close/switch projects) happens entirely within the webapp
+
+## Architecture
+
+```
+┌─ Sidebar ──────────┬─ Active Project Panel ───────────────────┐
+│ + New Project       │  Terminal (left) │ PRD (mid) │ Spec (r) │
+│                     │                  │           │          │
+│ ● my-app       [x] │  claude running   │ # PRD     │ # Spec   │
+│   my-service       │  in /projects/    │ content   │ content  │
+│   my-lib           │  my-app           │ ...       │ ...      │
+│                     │                  │           │          │
+└─────────────────────┴──────────────────────────────────────────┘
+```
+
+- Sidebar lists all open projects (from SQLite). Click to switch active view. \"+\" to add new.
+- Main area: existing Terminal + Document panels, scoped to the active project.
+- Each project gets its own PTY session, document watcher, and SSE stream.
+- SQLite at `~/.attractor/web.db` stores projects, cached doc content, and open/closed state.
+
+## Key Technical Decisions
+
+1. **SQLite via sqlx** (already a dep): Simple, embedded, no external services. Schema uses
+   CREATE TABLE IF NOT EXISTS — no migration framework needed for this scale.
+
+2. **Per-project DocumentWatcher**: Each project gets its own `notify` watcher for
+   `{folder}/.attractor/`. Watchers are created lazily and stored in a shared HashMap.
+   File changes both broadcast via SSE AND persist to SQLite.
+
+3. **Per-project Terminal PTY**: `spawn_claude_pty` takes a `cwd` parameter. The WebSocket
+   URL includes `?folder=<path>` so the server knows where to spawn `claude`.
+
+4. **Folder picker = text input + directory browser**: The server runs locally, so we can
+   expose a `list_directory()` server function for browsing. Both input methods available.
+
+5. **Project views stay mounted but hidden**: When switching projects, the inactive project's
+   view is hidden via CSS (display:none), not unmounted. This preserves terminal state
+   and avoids re-establishing WebSocket connections.
+
+## SQLite Schema
+
+```sql
+CREATE TABLE IF NOT EXISTS projects (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    folder_path TEXT    NOT NULL UNIQUE,
+    name        TEXT    NOT NULL,
+    is_open     INTEGER NOT NULL DEFAULT 1,
+    last_used   TEXT    NOT NULL DEFAULT (datetime('now')),
+    created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS documents (
+    project_id  INTEGER NOT NULL REFERENCES projects(id),
+    doc_type    TEXT    NOT NULL,  -- 'prd' or 'spec'
+    content     TEXT    NOT NULL DEFAULT '',
+    updated_at  TEXT    NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (project_id, doc_type)
+);
+```
+
+## Supersedes
+
+Closes the previous duplicate epics attractor-s6a and attractor-kln and all their child tasks.
+Those were a narrower scope (single project selector + version history). This epic is broader
+(multi-project simultaneous workspace + document persistence)."
+    model="sonnet"
+
+    start [shape="Mdiamond"]
+    done  [shape="Msquare"]
+
+    // --- Pick the next task ---
+    pick_task [
+        shape="diamond"
+        label="Pick Next Task"
+        node_type="conditional"
+        llm_model="haiku"
+        allowed_tools="Bash(bd:*)"
+        prompt="Run: bd show attractor-e0n
+Look at the BLOCKS section to see child tasks.
+
+Then run: bd ready
+Find the first ready (unblocked, open) child task of epic attractor-e0n.
+
+If you find one:
+- Run: bd update <task-id> --status=in_progress
+- Write the task ID and full description to .attractor/current_task.md
+- Respond with MORE on the last line
+
+If all child tasks are closed (no more ready tasks for this epic):
+- Respond with DONE on the last line"
+    ]
+
+    // --- Investigate ---
+    investigate [
+        shape="box"
+        label="Investigate"
+        allowed_tools="Read,Grep,Glob,Bash(bd:*)"
+        prompt="Read .attractor/current_task.md to get the current task ID and description.
+Run bd show <task-id> to get full details.
+
+Investigate the codebase to understand what needs to change:
+- Find the relevant files and functions
+- Understand the current behavior
+- Identify what needs to change
+
+Write your findings to .attractor/investigation.md including:
+- Files to modify
+- Current behavior
+- Required changes
+- Any risks or dependencies"
+    ]
+
+    // --- Implement ---
+    implement [
+        shape="box"
+        label="Implement"
+        prompt="Read .attractor/current_task.md for the task and .attractor/investigation.md for the plan.
+Implement the changes described. Follow existing code patterns and conventions.
+Keep changes minimal and focused on the task requirements."
+    ]
+
+    // --- Test ---
+    run_tests [
+        shape="box"
+        label="Run Tests"
+        prompt="Read .attractor/current_task.md to understand what was changed.
+Run the relevant test suite for the modified code.
+If tests fail, fix the issues and re-run until green.
+Write the test results to .attractor/test-results.md"
+    ]
+
+    // --- Verify ---
+    verify [
+        shape="diamond"
+        label="Verify"
+        node_type="conditional"
+        prompt="Read .attractor/current_task.md for the task requirements.
+Check the changes:
+1. Review the git diff
+2. Run the linter on changed files
+3. Verify tests pass (read .attractor/test-results.md)
+4. Check that the task's acceptance criteria are met
+
+If everything looks good, respond with PASS on the last line.
+If there are problems, respond with FAIL on the last line."
+    ]
+
+    fixup [
+        shape="box"
+        label="Fix Issues"
+        prompt="Read .attractor/current_task.md and .attractor/investigation.md for context.
+The verification step found problems. Fix any failing tests, lint errors, or unmet acceptance criteria.
+Re-run tests after fixing."
+    ]
+
+    // --- Close this task ---
+    close_task [
+        shape="box"
+        label="Close Task"
+        allowed_tools="Bash(bd:*),Bash(git:*)"
+        prompt="Read .attractor/current_task.md to get the task ID.
+1. Stage changes: git add -A
+2. Commit with a descriptive message referencing the task ID
+3. Close the task: bd close <task-id> --reason='Implemented successfully'
+4. Run: bd sync --flush-only"
+    ]
+
+    // --- Check if more tasks remain ---
+    check_remaining [
+        shape="diamond"
+        label="More Tasks?"
+        node_type="conditional"
+        llm_model="haiku"
+        allowed_tools="Bash(bd:*)"
+        prompt="Run: bd show attractor-e0n
+Look at the BLOCKS section. Count how many child tasks are still open.
+
+Run: bd ready
+Check if any remaining child tasks of this epic are ready (unblocked, open).
+
+If there are more ready tasks, respond with MORE on the last line.
+If all tasks are closed or remaining tasks are blocked, respond with DONE on the last line."
+    ]
+
+    // --- Edges ---
+    start -> pick_task
+
+    pick_task -> investigate [label="MORE", condition="preferred_label=MORE"]
+    pick_task -> done        [label="DONE", condition="preferred_label=DONE"]
+
+    investigate -> implement -> run_tests -> verify
+
+    verify -> close_task [label="PASS", condition="preferred_label=PASS"]
+    verify -> fixup      [label="FAIL", condition="preferred_label=FAIL"]
+    fixup  -> verify
+
+    close_task -> check_remaining
+
+    check_remaining -> pick_task [label="MORE", condition="preferred_label=MORE", loop_restart=true]
+    check_remaining -> done      [label="DONE", condition="preferred_label=DONE"]
+}
