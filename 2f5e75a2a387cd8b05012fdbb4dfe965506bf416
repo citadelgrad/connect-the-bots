@@ -1,0 +1,31 @@
+crates/attractor-tools/src/builtin/edit_file.rs
+  fe7c6835012f29eb 98
+crates/attractor-pipeline/src/lib.rs
+  fe7c6835012f29eb 5
+crates/attractor-pipeline/src/validation.rs
+  fe7c6835012f29eb 61,64-65,621-622,624
+crates/attractor-pipeline/src/handlers/mod.rs
+  fe7c6835012f29eb 166-173
+crates/attractor-pipeline/src/engine.rs
+  fe7c6835012f29eb 217-218,223-231,589-661
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.3",
+  "base_commit_sha": "2f5e75a2a387cd8b05012fdbb4dfe965506bf416",
+  "prompts": {
+    "fe7c6835012f29eb": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f1c777aa-7cec-4397-995a-04572ef1bb91",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 101,
+      "total_deletions": 6,
+      "accepted_lines": 101,
+      "overriden_lines": 0
+    }
+  }
+}
