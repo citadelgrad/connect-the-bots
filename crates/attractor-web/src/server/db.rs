@@ -31,7 +31,7 @@ pub async fn init_db() -> Result<SqlitePool, sqlx::Error> {
         .expect("Failed to create ~/.attractor directory");
 
     let db_path = attractor_dir.join("web.db");
-    let db_url = format!("sqlite:{}", db_path.display());
+    let db_url = format!("sqlite:{}?mode=rwc", db_path.display());
 
     // Create connection pool
     let pool = SqlitePoolOptions::new()

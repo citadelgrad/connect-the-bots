@@ -64,7 +64,9 @@ async fn main() {
         .with_state(leptos_options);
 
     tracing::info!("listening on http://{}", &addr);
-    let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
+    let listener = tokio::net::TcpListener::bind(&addr).await.unwrap_or_else(|e| {
+        panic!("Failed to bind to {addr}: {e}. Is another instance already running?");
+    });
     let app = app.into_make_service();
     axum::serve(listener, app).await.unwrap();
 }

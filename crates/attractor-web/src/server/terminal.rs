@@ -179,22 +179,17 @@ async fn handle_terminal_socket(ws: WebSocket, query: WsQuery, state: super::App
             );
 
             // Determine the working directory
+            let fallback_dir = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("/"));
             let cwd = if let Some(ref folder_path) = query.folder {
                 let path = std::path::Path::new(folder_path);
                 if path.exists() && path.is_dir() {
                     path
                 } else {
                     tracing::warn!("Invalid folder path: {}, falling back to current_dir", folder_path);
-                    std::env::current_dir()
-                        .as_ref()
-                        .map(|p| p.as_path())
-                        .unwrap_or_else(|_| std::path::Path::new("/"))
+                    fallback_dir.as_path()
                 }
             } else {
-                std::env::current_dir()
-                    .as_ref()
-                    .map(|p| p.as_path())
-                    .unwrap_or_else(|_| std::path::Path::new("/"))
+                fallback_dir.as_path()
             };
 
             match spawn_claude_pty(cwd) {
@@ -213,22 +208,17 @@ async fn handle_terminal_socket(ws: WebSocket, query: WsQuery, state: super::App
     } else {
         // Brand new session
         // Determine the working directory
+        let fallback_dir = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("/"));
         let cwd = if let Some(ref folder_path) = query.folder {
             let path = std::path::Path::new(folder_path);
             if path.exists() && path.is_dir() {
                 path
             } else {
                 tracing::warn!("Invalid folder path: {}, falling back to current_dir", folder_path);
-                std::env::current_dir()
-                    .as_ref()
-                    .map(|p| p.as_path())
-                    .unwrap_or_else(|_| std::path::Path::new("/"))
+                fallback_dir.as_path()
             }
         } else {
-            std::env::current_dir()
-                .as_ref()
-                .map(|p| p.as_path())
-                .unwrap_or_else(|_| std::path::Path::new("/"))
+            fallback_dir.as_path()
         };
 
         match spawn_claude_pty(cwd) {

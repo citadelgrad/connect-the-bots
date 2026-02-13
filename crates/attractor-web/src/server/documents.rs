@@ -5,10 +5,10 @@
 
 use axum::response::sse::{Event, KeepAlive, Sse};
 use axum::extract::{Query};
-use futures::stream::{Stream, BoxStream};
+use futures::stream::BoxStream;
 use serde::{Serialize, Deserialize};
 use std::convert::Infallible;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::broadcast;
 
@@ -217,23 +217,4 @@ pub async fn document_stream(
     use futures::StreamExt;
     let combined = initial_stream.chain(live_stream).boxed();
     Sse::new(combined).keep_alive(KeepAlive::default())
-}
-
-/// Load existing PRD/Spec files for initial SSE state.
-fn load_initial_documents(attractor_dir: &Path) -> Vec<DocumentUpdate> {
-    let mut updates = Vec::new();
-
-    for (filename, doc_type) in &[("prd.md", "prd"), ("spec.md", "spec")] {
-        let path = attractor_dir.join(filename);
-        if path.exists() {
-            if let Ok(content) = std::fs::read_to_string(&path) {
-                updates.push(DocumentUpdate {
-                    doc_type: doc_type.to_string(),
-                    content: Some(content),
-                });
-            }
-        }
-    }
-
-    updates
 }
