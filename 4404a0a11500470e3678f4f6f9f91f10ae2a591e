@@ -1,0 +1,36 @@
+crates/attractor-web/src/components/terminal.rs
+  0c70c2ae34895498 8-11,14-19,28-30,37,39-40,47-58
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.3",
+  "base_commit_sha": "4404a0a11500470e3678f4f6f9f91f10ae2a591e",
+  "prompts": {
+    "0c70c2ae34895498": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "380baa9a-78b6-47ae-a35a-8f2806dbaa5f",
+        "model": "unknown"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 31,
+      "total_deletions": 3,
+      "accepted_lines": 28,
+      "overriden_lines": 0
+    },
+    "6f41c7bf83ed396d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ffe97a67-b23b-4c15-8c23-e7983ce5cb58",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}
