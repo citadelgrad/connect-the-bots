@@ -1,10 +1,31 @@
-use crate::server::db;
 use serde::{Deserialize, Serialize};
+
+#[cfg(feature = "ssr")]
+use crate::server::db;
+#[cfg(feature = "ssr")]
 use sqlx::SqlitePool;
+#[cfg(feature = "ssr")]
 use std::path::{Path, PathBuf};
 
-// Re-export database types for use in server functions
+// Re-export database types for use in server functions (SSR only)
+#[cfg(feature = "ssr")]
 pub use crate::server::db::{CachedDoc, Project};
+
+// Client-side type definitions (when not SSR)
+#[cfg(not(feature = "ssr"))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Project {
+    pub id: i64,
+    pub folder_path: String,
+    pub name: String,
+}
+
+#[cfg(not(feature = "ssr"))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CachedDoc {
+    pub doc_type: String,
+    pub content: String,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CachedDocs {
