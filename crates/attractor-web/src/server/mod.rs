@@ -14,4 +14,5 @@ pub mod terminal;
 pub struct AppState {
     pub doc_watcher: std::sync::Arc<documents::DocumentWatcher>,
     pub attractor_dir: std::path::PathBuf,
+    pub terminal_sessions: terminal::TerminalSessions,
 }
