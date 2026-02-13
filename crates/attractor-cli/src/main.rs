@@ -428,19 +428,65 @@ async fn cmd_decompose(spec_path: &std::path::Path, dry_run: bool) -> anyhow::Re
         "Read this technical specification and generate a shell script of beads (bd) CLI commands to create an epic and tasks.\n\n\
         SPEC:\n{}\n\n\
         INSTRUCTIONS:\n\
+        \n\
+        ## Structure\n\
         1. Extract the title from the spec (usually in the first heading)\n\
-        2. Extract implementation phases/tasks from the '## Implementation Phases' or similar section\n\
-        3. Create an epic first: EPIC_ID=$(bd create --title='TITLE' --type=epic --priority=P1 --description='OVERVIEW' --silent)\n\
-        4. For each task/phase: TASK_N=$(bd create --title='TITLE' --type=task --priority=PN --description='DESC' --silent)\n\
-        5. Add dependencies using: bd dep add $BLOCKED_TASK $BLOCKER_TASK (the blocked task depends on the blocker)\n\
-        6. Output ONLY executable shell commands - no markdown code fences (```), no explanations, no commentary\n\
-        7. Use set -e at the start so it fails fast on errors\n\
-        8. Echo the epic ID at the end: echo $EPIC_ID\n\
-        9. Priority should be P2 for most tasks unless critical (P1) or backlog (P3/P4)\n\
-        10. Task descriptions should be 1-2 sentences summarizing what needs to be done\n\
-        11. CRITICAL: Do NOT wrap output in markdown code fences. Start directly with 'set -e'\n\
-        12. CRITICAL: All --title and --description values MUST be in single quotes. Escape any single quotes inside values with '\\'' (end quote, escaped quote, start quote)\n\
-        13. Do NOT use parentheses, backticks, or dollar signs inside quoted strings — keep descriptions plain text only",
+        2. Extract implementation phases/tasks from the spec sections\n\
+        3. Create an epic first, then individual tasks, then dependencies\n\
+        4. Use set -e at the start so it fails fast on errors\n\
+        5. Echo the epic ID at the end: echo $EPIC_ID\n\
+        6. Output ONLY executable shell commands - no markdown code fences, no explanations, no commentary\n\
+        7. CRITICAL: Do NOT wrap output in markdown code fences. Start directly with 'set -e'\n\
+        8. Priority should be P2 for most tasks unless critical (P1) or backlog (P3/P4)\n\
+        \n\
+        ## Task Content — PRESERVE ALL CONTEXT\n\
+        Each task ticket must contain ALL technical details needed to implement it without referring back to the spec.\n\
+        An agent or developer picking up a ticket should have everything they need right there.\n\
+        \n\
+        Use these bd create fields to carry the full context:\n\
+        - --description: High-level summary of what the task is and why (2-4 sentences)\n\
+        - --acceptance: Specific acceptance criteria — list the exact test names, assertions, expected behaviors, and edge cases.\n\
+          Include function signatures, error types to check, and any numeric thresholds.\n\
+        - --design: Implementation details — code examples, file paths where code should go, architectural decisions,\n\
+          design rationale, data structures, and any code snippets from the spec. This is where full code examples go.\n\
+        - --notes: Cross-references, warnings, gotchas, related tasks, CI considerations, and any \"IMPORTANT\" callouts from the spec.\n\
+        \n\
+        CRITICAL: Do NOT summarize or compress the spec content. If the spec has 60 lines of detail for a task, all 60 lines\n\
+        of substance should be distributed across --description, --acceptance, --design, and --notes. The ticket IS the spec\n\
+        for that unit of work. Lost context means wrong implementations.\n\
+        \n\
+        ## Shell Escaping\n\
+        For short single-line values, use single quotes with internal single quotes escaped as '\\''.\n\
+        For multiline or long values (code examples, acceptance criteria lists, design notes), use --body-file with heredoc:\n\
+        \n\
+        TASK_N=$(cat <<'ENDDESC' | bd create --title='TITLE' --type=task --priority=PN --body-file=- \\\n\
+          --acceptance='criteria here' --silent\n\
+        Full multiline description goes here.\n\
+        Can span multiple lines safely.\n\
+        ENDDESC\n\
+        )\n\
+        \n\
+        For --design and --notes with multiline content, write to temp files:\n\
+        \n\
+        cat <<'ENDDESIGN' > /tmp/bd_design_N.txt\n\
+        Design content here with code examples, file paths, etc.\n\
+        ENDDESIGN\n\
+        TASK_N=$(bd create --title='TITLE' --type=task --priority=PN \\\n\
+          --description='Summary here' \\\n\
+          --acceptance='Criteria here' \\\n\
+          --design=\"$(cat /tmp/bd_design_N.txt)\" \\\n\
+          --notes='Notes here' --silent)\n\
+        rm -f /tmp/bd_design_N.txt\n\
+        \n\
+        Choose the simplest approach that safely captures all content. If a field is short and has no special characters,\n\
+        inline single quotes are fine. Use heredocs/temp files only when the content demands it.\n\
+        \n\
+        Do NOT use parentheses, backticks, or dollar signs inside quoted strings — keep text plain.\n\
+        \n\
+        ## Dependencies\n\
+        - bd dep add $BLOCKED_TASK $BLOCKER_TASK (the blocked task depends on the blocker)\n\
+        - Make all tasks part of the epic: bd dep add $EPIC_ID $TASK_N\n\
+        - Add task-to-task dependencies where the spec indicates ordering requirements",
         spec_content
     );
 
@@ -538,9 +584,170 @@ async fn cmd_decompose(spec_path: &std::path::Path, dry_run: bool) -> anyhow::Re
     println!("  Epic ID: {}", epic_id);
     println!("  Tasks created: {}", task_count);
     println!("  Dependencies: {}", dep_count);
+
+    // Run post-decompose validation
+    validate_decomposition(&spec_content, epic_id).await?;
+
     println!("\nNext steps:");
     println!("1. Review tasks: bd list");
     println!("2. Generate pipeline: attractor scaffold {}", epic_id);
+
+    Ok(())
+}
+
+async fn validate_decomposition(
+    spec_content: &str,
+    epic_id: &str,
+) -> anyhow::Result<()> {
+    use std::collections::HashSet;
+
+    // Step A: Fetch all child tickets
+    let list_output = tokio::process::Command::new("bd")
+        .args(["list", "--parent", epic_id, "--json", "--limit", "0"])
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .output()
+        .await?;
+
+    if !list_output.status.success() {
+        let stderr = String::from_utf8_lossy(&list_output.stderr);
+        println!("\nValidation: skipped (bd list failed: {})", stderr.trim());
+        return Ok(());
+    }
+
+    let json_str = String::from_utf8(list_output.stdout)?;
+    let tickets: Vec<serde_json::Value> = match serde_json::from_str(&json_str) {
+        Ok(v) => v,
+        Err(_) => {
+            println!("\nValidation: skipped (could not parse ticket JSON)");
+            return Ok(());
+        }
+    };
+
+    if tickets.is_empty() {
+        println!("\nValidation: no child tickets found for {}", epic_id);
+        return Ok(());
+    }
+
+    // Step B: Field completeness check
+    let check_fields = ["description", "acceptance_criteria", "design"];
+    let mut incomplete: Vec<(String, String, Vec<&str>)> = Vec::new();
+    let mut complete_count = 0;
+
+    for ticket in &tickets {
+        let id = ticket["id"].as_str().unwrap_or("?");
+        let title = ticket["title"].as_str().unwrap_or("?");
+        let missing: Vec<&str> = check_fields
+            .iter()
+            .filter(|&&field| {
+                ticket[field]
+                    .as_str()
+                    .map_or(true, |v| v.trim().is_empty())
+            })
+            .copied()
+            .collect();
+
+        if missing.is_empty() {
+            complete_count += 1;
+        } else {
+            incomplete.push((id.to_string(), title.to_string(), missing));
+        }
+    }
+
+    // Step C: Extract key identifiers from spec
+    let re_fn = regex::Regex::new(r"(?:test_|fn\s+)(\w+)").unwrap();
+    let re_path = regex::Regex::new(r"(?:src|tests)/[\w/]+\.(?:rs|ndjson)").unwrap();
+    let re_qualified = regex::Regex::new(r"([A-Z]\w+::\w+)").unwrap();
+    let re_header = regex::Regex::new(r"####\s+`([^`]+)`").unwrap();
+
+    let mut identifiers = HashSet::new();
+
+    for cap in re_fn.captures_iter(spec_content) {
+        identifiers.insert(cap[1].to_string());
+    }
+    for mat in re_path.find_iter(spec_content) {
+        identifiers.insert(mat.as_str().to_string());
+    }
+    for cap in re_qualified.captures_iter(spec_content) {
+        identifiers.insert(cap[1].to_string());
+    }
+    for cap in re_header.captures_iter(spec_content) {
+        identifiers.insert(cap[1].to_string());
+    }
+
+    // Step D: Check coverage
+    // Build combined text per ticket
+    let ticket_texts: Vec<String> = tickets
+        .iter()
+        .map(|t| {
+            let mut combined = String::new();
+            for field in &["description", "acceptance_criteria", "design", "notes"] {
+                if let Some(v) = t[*field].as_str() {
+                    combined.push_str(v);
+                    combined.push('\n');
+                }
+            }
+            combined
+        })
+        .collect();
+
+    let mut missing_ids: Vec<&str> = Vec::new();
+    let mut covered = 0usize;
+
+    for ident in &identifiers {
+        if ticket_texts.iter().any(|text| text.contains(ident.as_str())) {
+            covered += 1;
+        } else {
+            missing_ids.push(ident);
+        }
+    }
+
+    missing_ids.sort();
+    let total = identifiers.len();
+    let pct = if total > 0 {
+        (covered as f64 / total as f64 * 100.0) as u32
+    } else {
+        100
+    };
+
+    // Step E: Print report
+    println!("\nValidation:");
+    println!(
+        "  Tickets: {} ({} tasks + 1 epic)",
+        tickets.len() + 1,
+        tickets.len()
+    );
+    println!(
+        "  Field completeness: {}/{} tickets fully populated",
+        complete_count,
+        tickets.len()
+    );
+    for (id, title, missing) in &incomplete {
+        println!(
+            "    WARN: {} \"{}\" — missing: {}",
+            id,
+            title,
+            missing.join(", ")
+        );
+    }
+
+    if total > 0 {
+        println!(
+            "  Spec coverage: {}/{} identifiers ({}%)",
+            covered, total, pct
+        );
+        if !missing_ids.is_empty() {
+            let display: Vec<&str> = missing_ids.iter().take(10).copied().collect();
+            let suffix = if missing_ids.len() > 10 {
+                format!(", ... ({} more)", missing_ids.len() - 10)
+            } else {
+                String::new()
+            };
+            println!("    Missing: {}{}", display.join(", "), suffix);
+        }
+    } else {
+        println!("  Spec coverage: no identifiers extracted from spec");
+    }
 
     Ok(())
 }

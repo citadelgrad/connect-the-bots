@@ -1,6 +1,8 @@
 use leptos::prelude::*;
+use leptos::task::spawn_local;
+use leptos::web_sys;
 use crate::components::folder_picker::FolderPicker;
-use crate::server::projects::{close_project, list_open_projects, Project};
+use crate::server::projects::{close_project, Project};
 
 /// ProjectSidebar component for managing open projects.
 ///
@@ -15,7 +17,7 @@ pub fn ProjectSidebar(
     projects: RwSignal<Vec<Project>>,
     active_project_id: RwSignal<Option<i64>>,
 ) -> impl IntoView {
-    let (show_picker, set_show_picker) = create_signal(false);
+    let (show_picker, set_show_picker) = signal(false);
 
     // Handle adding a new project
     let handle_project_selected = move |project: Project| {
@@ -25,12 +27,12 @@ pub fn ProjectSidebar(
             projects.set(current);
         }
         active_project_id.set(Some(project.id));
-        set_show_picker(false);
+        set_show_picker.set(false);
     };
 
     // Handle closing a project
     let handle_close_project = move |project_id: i64| {
-        set_show_picker(false);
+        set_show_picker.set(false);
 
         spawn_local({
             async move {
@@ -60,7 +62,7 @@ pub fn ProjectSidebar(
             <div class="sidebar-header">
                 <button
                     class="sidebar-new-project"
-                    on:click=move |_| set_show_picker(true)
+                    on:click=move |_| set_show_picker.set(true)
                 >
                     "+ New Project"
                 </button>
@@ -76,7 +78,7 @@ pub fn ProjectSidebar(
                             <div class="sidebar-empty">
                                 "No projects open. Add one to get started."
                             </div>
-                        }
+                        }.into_any()
                     } else {
                         view! {
                             <For
@@ -111,27 +113,27 @@ pub fn ProjectSidebar(
                                                 on:click=handle_close
                                                 title="Close project"
                                             >
-                                                "×"
+                                                {"\u{00D7}"}
                                             </button>
                                         </div>
                                     }
                                 }
                             />
-                        }
+                        }.into_any()
                     }
                 }}
             </div>
 
             {move || {
-                if show_picker() {
+                if show_picker.get() {
                     view! {
                         <FolderPicker
                             on_select=handle_project_selected
-                            on_close=move || set_show_picker(false)
+                            on_close=move || set_show_picker.set(false)
                         />
-                    }
+                    }.into_any()
                 } else {
-                    view! { <></> }
+                    view! { <span></span> }.into_any()
                 }
             }}
         </div>

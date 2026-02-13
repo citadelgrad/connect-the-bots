@@ -163,6 +163,7 @@ dependencies = [
  "attractor-types",
  "chrono",
  "clap",
+ "regex",
  "serde_json",
  "tokio",
  "tracing",

@@ -1,4 +1,6 @@
 use leptos::prelude::*;
+use leptos::task::spawn_local;
+use leptos::web_sys;
 use crate::server::projects::{list_directory, open_project, DirEntry, Project};
 
 /// FolderPicker component for selecting a project folder.
@@ -21,35 +23,34 @@ where
     let on_close_clone = on_close.clone();
 
     // Text input state
-    let (path_input, set_path_input) = create_signal(String::new());
-    let (input_error, set_input_error) = create_signal(String::new());
-    let (input_loading, set_input_loading) = create_signal(false);
+    let (path_input, set_path_input) = signal(String::new());
+    let (input_error, set_input_error) = signal(String::new());
+    let (input_loading, set_input_loading) = signal(false);
 
     // Directory browser state
-    let (current_path, set_current_path) = create_signal(String::new());
-    let (dir_entries, set_dir_entries) = create_signal(Vec::<DirEntry>::new());
-    let (browser_loading, set_browser_loading) = create_signal(false);
-    let (browser_error, set_browser_error) = create_signal(String::new());
+    let (current_path, set_current_path) = signal(String::new());
+    let (dir_entries, set_dir_entries) = signal(Vec::<DirEntry>::new());
+    let (browser_loading, set_browser_loading) = signal(false);
+    let (browser_error, set_browser_error) = signal(String::new());
 
     // Load home directory on mount
-    create_effect(move |_| {
-        set_browser_loading(true);
-        set_browser_error(String::new());
+    Effect::new(move |_| {
+        set_browser_loading.set(true);
+        set_browser_error.set(String::new());
 
         spawn_local({
             async move {
                 match list_directory("".to_string()).await {
                     Ok(entries) => {
-                        // Get home directory path from first entry's context or use HOME env
                         let home = std::env::var("HOME").unwrap_or_else(|_| "/Users".to_string());
-                        set_current_path(home);
-                        set_dir_entries(entries);
+                        set_current_path.set(home);
+                        set_dir_entries.set(entries);
                     }
                     Err(e) => {
-                        set_browser_error(format!("Failed to load directory: {}", e));
+                        set_browser_error.set(format!("Failed to load directory: {}", e));
                     }
                 }
-                set_browser_loading(false);
+                set_browser_loading.set(false);
             }
         });
     });
@@ -61,12 +62,12 @@ where
         move |_| {
             let path = path_input.get();
             if path.is_empty() {
-                set_input_error("Please enter a path".to_string());
+                set_input_error.set("Please enter a path".to_string());
                 return;
             }
 
-            set_input_loading(true);
-            set_input_error(String::new());
+            set_input_loading.set(true);
+            set_input_error.set(String::new());
 
             spawn_local({
                 let path = path.clone();
@@ -79,10 +80,10 @@ where
                             on_close();
                         }
                         Err(e) => {
-                            set_input_error(e.to_string());
+                            set_input_error.set(e.to_string());
                         }
                     }
-                    set_input_loading(false);
+                    set_input_loading.set(false);
                 }
             });
         }
@@ -91,21 +92,21 @@ where
     // Handle directory navigation
     let handle_nav = {
         move |path: String| {
-            set_browser_loading(true);
-            set_browser_error(String::new());
+            set_browser_loading.set(true);
+            set_browser_error.set(String::new());
 
             spawn_local({
                 async move {
                     match list_directory(path.clone()).await {
                         Ok(entries) => {
-                            set_current_path(path);
-                            set_dir_entries(entries);
+                            set_current_path.set(path);
+                            set_dir_entries.set(entries);
                         }
                         Err(e) => {
-                            set_browser_error(format!("Failed to load directory: {}", e));
+                            set_browser_error.set(format!("Failed to load directory: {}", e));
                         }
                     }
-                    set_browser_loading(false);
+                    set_browser_loading.set(false);
                 }
             });
         }
@@ -117,8 +118,8 @@ where
         let on_close = on_close.clone();
         move |_| {
             let path = current_path.get();
-            set_browser_loading(true);
-            set_browser_error(String::new());
+            set_browser_loading.set(true);
+            set_browser_error.set(String::new());
 
             spawn_local({
                 let on_select = on_select.clone();
@@ -130,10 +131,10 @@ where
                             on_close();
                         }
                         Err(e) => {
-                            set_browser_error(e.to_string());
+                            set_browser_error.set(e.to_string());
                         }
                     }
-                    set_browser_loading(false);
+                    set_browser_loading.set(false);
                 }
             });
         }
@@ -149,8 +150,11 @@ where
         }
     };
 
+    let on_close_overlay = on_close.clone();
+    let on_close_btn = on_close;
+
     view! {
-        <div class="folder-picker-overlay" on:click={move |_| on_close.clone()()}>
+        <div class="folder-picker-overlay" on:click={move |_| on_close_overlay()}>
             <div
                 class="folder-picker-modal"
                 on:click=|ev: web_sys::MouseEvent| ev.stop_propagation()
@@ -160,9 +164,9 @@ where
                     <h2>Open Project</h2>
                     <button
                         class="close-btn"
-                        on:click=move |_| on_close.clone()()
+                        on:click=move |_| on_close_btn()
                     >
-                        ×
+                        {"\u{00D7}"}
                     </button>
                 </div>
 
@@ -175,7 +179,7 @@ where
                             class="path-input"
                             placeholder="/Users/you/projects/my-app"
                             value=path_input
-                            on:input=move |ev| set_path_input(event_target_value(&ev))
+                            on:input=move |ev| set_path_input.set(event_target_value(&ev))
                             disabled=input_loading
                         />
                         <button
@@ -183,14 +187,16 @@ where
                             on:click=handle_input_open
                             disabled=input_loading
                         >
-                            {if input_loading() { "Opening..." } else { "Open" }}
+                            {move || if input_loading.get() { "Opening..." } else { "Open" }}
                         </button>
-                        {if !input_error.get().is_empty() {
-                            view! {
-                                <div class="error-message">{input_error}</div>
+                        {move || {
+                            if !input_error.get().is_empty() {
+                                view! {
+                                    <div class="error-message">{move || input_error.get()}</div>
+                                }.into_any()
+                            } else {
+                                view! { <span></span> }.into_any()
                             }
-                        } else {
-                            view! { <></> }
                         }}
                     </div>
 
@@ -200,38 +206,40 @@ where
                     <div class="browser-section">
                         <h3>Browse Directories</h3>
                         <div class="breadcrumb">
-                            <span class="breadcrumb-path">{current_path}</span>
+                            <span class="breadcrumb-path">{move || current_path.get()}</span>
                         </div>
 
                         <div class="directory-list">
-                            {if browser_loading() {
-                                view! {
-                                    <div class="loading-indicator">Loading...</div>
-                                }
-                            } else if !browser_error.get().is_empty() {
-                                view! {
-                                    <div class="error-message">{browser_error}</div>
-                                }
-                            } else {
-                                let on_nav = handle_nav;
-                                view! {
-                                    <For
-                                        each=move || dir_entries.get()
-                                        key=|entry| entry.path.clone()
-                                        children=move |entry: DirEntry| {
-                                            let path = entry.path.clone();
-                                            let on_nav_click = on_nav.clone();
-                                            view! {
-                                                <div
-                                                    class="dir-entry"
-                                                    on:click=move |_| on_nav_click(path.clone())
-                                                >
-                                                    <span class="dir-icon">📁</span>
-                                                    <span class="dir-name">{entry.name}</span>
-                                                </div>
+                            {move || {
+                                if browser_loading.get() {
+                                    view! {
+                                        <div class="loading-indicator">"Loading..."</div>
+                                    }.into_any()
+                                } else if !browser_error.get().is_empty() {
+                                    view! {
+                                        <div class="error-message">{move || browser_error.get()}</div>
+                                    }.into_any()
+                                } else {
+                                    let on_nav = handle_nav.clone();
+                                    view! {
+                                        <For
+                                            each=move || dir_entries.get()
+                                            key=|entry| entry.path.clone()
+                                            children=move |entry: DirEntry| {
+                                                let path = entry.path.clone();
+                                                let on_nav_click = on_nav.clone();
+                                                view! {
+                                                    <div
+                                                        class="dir-entry"
+                                                        on:click=move |_| on_nav_click(path.clone())
+                                                    >
+                                                        <span class="dir-icon">{"\u{1F4C1}"}</span>
+                                                        <span class="dir-name">{entry.name}</span>
+                                                    </div>
+                                                }
                                             }
-                                        }
-                                    />
+                                        />
+                                    }.into_any()
                                 }
                             }}
                         </div>
@@ -241,7 +249,7 @@ where
                             on:click=handle_browser_select
                             disabled=browser_loading
                         >
-                            {if browser_loading() { "Opening..." } else { "Select This Folder" }}
+                            {move || if browser_loading.get() { "Opening..." } else { "Select This Folder" }}
                         </button>
                     </div>
                 </div>

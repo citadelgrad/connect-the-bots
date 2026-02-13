@@ -50,7 +50,6 @@ pub fn App() -> impl IntoView {
                                     key=|project| project.id
                                     children=move |project: Project| {
                                         let is_active = move || active_id == Some(project.id);
-                                        let project_id = project.id;
 
                                         view! {
                                             <div
