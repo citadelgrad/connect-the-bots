@@ -4,6 +4,7 @@ use crate::components::approval_bar::ApprovalBar;
 use crate::components::document_viewer::DocumentViewer;
 use crate::components::execution_panel::ExecutionPanel;
 use crate::components::terminal::Terminal;
+use crate::server::projects::Project;
 
 /// View mode for the right panel
 #[derive(Clone, Copy, PartialEq)]
@@ -12,9 +13,19 @@ pub enum RightPanel {
     Execution,
 }
 
-/// Single-page two-column layout: Terminal (left) + Document/Execution viewer (right)
+/// Project-scoped two-column layout: Terminal (left) + Document/Execution viewer (right)
+/// Accepts a Project prop and renders the terminal + document panels for that project.
+/// Multiple instances can coexist simultaneously (one per open project).
 #[component]
-pub fn MainLayout() -> impl IntoView {
+pub fn ProjectView(
+    #[prop(into)] project: Project,
+) -> impl IntoView {
+    // Extract project fields for use in component
+    let project_id = project.id;
+    let folder = project.folder_path.clone();
+    let project_name = project.name.clone();
+    let container_id = format!("terminal-{}", project_id);
+
     let (panel, set_panel) = signal(RightPanel::Documents);
     let (session_id, set_session_id) = signal(Option::<String>::None);
     let (prd_exists, set_prd_exists) = signal(false);
@@ -34,13 +45,13 @@ pub fn MainLayout() -> impl IntoView {
     view! {
         <div class="app-layout">
             <header class="app-header">
-                <h1 class="app-title">"Attractor"</h1>
+                <h1 class="app-title">{project_name.clone()}</h1>
                 <div class="app-header-actions">
                     {move || match panel.get() {
                         RightPanel::Documents => {
                             view! {
                                 <ApprovalBar
-                                    project_id=1
+                                    project_id=project_id
                                     enabled=can_approve
                                     on_approve=on_approve
                                 />
@@ -62,13 +73,17 @@ pub fn MainLayout() -> impl IntoView {
                 if panel.get() == RightPanel::Documents { format!("{base} documents-mode") } else { base.to_string() }
             }>
                 <div class="panel-left">
-                    <Terminal />
+                    <Terminal
+                        folder=folder.clone()
+                        container_id=container_id.clone()
+                    />
                 </div>
 
                 {move || match panel.get() {
                     RightPanel::Documents => {
                         view! {
                             <DocumentViewer
+                                project_id=project_id
                                 on_prd_change=move |exists| set_prd_exists.set(exists)
                                 on_spec_change=move |exists| set_spec_exists.set(exists)
                             />
