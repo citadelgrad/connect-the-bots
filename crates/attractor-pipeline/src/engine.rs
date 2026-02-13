@@ -110,7 +110,7 @@ impl PipelineExecutor {
             .get("max_budget_usd")
             .await
             .and_then(|v| v.as_f64())
-            .unwrap_or(f64::MAX);
+            .unwrap_or(200.0);
         let max_steps: u64 = context
             .get("max_steps")
             .await
