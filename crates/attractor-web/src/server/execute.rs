@@ -21,6 +21,14 @@ pub struct ExecutionResponse {
     pub pipeline_path: String,
 }
 
+/// Resolve the attractor CLI binary path.
+///
+/// Checks `ATTRACTOR_CLI_PATH` env var first, then falls back to `attractor` on PATH.
+#[cfg(feature = "ssr")]
+fn attractor_cli_path() -> String {
+    std::env::var("ATTRACTOR_CLI_PATH").unwrap_or_else(|_| "attractor".into())
+}
+
 /// Start the full execution chain: decompose spec → scaffold pipeline → run.
 ///
 /// 1. Runs `attractor decompose .attractor/spec.md` → captures epic_id
@@ -31,6 +39,7 @@ pub async fn start_execution() -> Result<ExecutionResponse, ServerFnError<NoCust
     use tokio::process::Command;
     use uuid::Uuid;
 
+    let cli = attractor_cli_path();
     let session_id = Uuid::new_v4().to_string();
     let spec_path = ".attractor/spec.md";
 
@@ -42,8 +51,8 @@ pub async fn start_execution() -> Result<ExecutionResponse, ServerFnError<NoCust
     }
 
     // 1. Decompose: spec → beads epic + tasks
-    tracing::info!("Starting decompose of {}", spec_path);
-    let decompose_output = Command::new("attractor")
+    tracing::info!("Starting decompose of {} (cli: {})", spec_path, cli);
+    let decompose_output = Command::new(&cli)
         .args(["decompose", spec_path])
         .output()
         .await
@@ -78,7 +87,7 @@ pub async fn start_execution() -> Result<ExecutionResponse, ServerFnError<NoCust
 
     // 2. Scaffold: epic → pipeline .dot file
     tracing::info!("Starting scaffold for {}", epic_id);
-    let scaffold_output = Command::new("attractor")
+    let scaffold_output = Command::new(&cli)
         .args(["scaffold", &epic_id])
         .output()
         .await

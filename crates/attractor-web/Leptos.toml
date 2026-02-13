@@ -13,8 +13,8 @@ site-pkg-dir = "pkg"
 style-file = "style/main.scss"
 
 # Server address and reload port
-site-addr = "127.0.0.1:3000"
-reload-port = 3001
+site-addr = "127.0.0.1:7777"
+reload-port = 7778
 
 # Browser targets for Lightning CSS
 browserquery = "defaults"

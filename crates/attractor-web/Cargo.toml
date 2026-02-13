@@ -36,6 +36,7 @@ attractor-types = { path = "../attractor-types", optional = true }
 chrono = { workspace = true, optional = true }
 notify = { version = "7", optional = true }
 portable-pty = { version = "0.9", optional = true }
+sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite"], optional = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "process", "io-util"], optional = true }
@@ -69,6 +70,7 @@ ssr = [
     "dep:chrono",
     "dep:notify",
     "dep:portable-pty",
+    "dep:sqlx",
     "dep:tracing-subscriber",
     "dep:tower",
     "dep:tower-http",
@@ -80,8 +82,8 @@ site-root = "target/site"
 site-pkg-dir = "pkg"
 style-file = "style/main.scss"
 assets-dir = "public"
-site-addr = "127.0.0.1:3000"
-reload-port = 3001
+site-addr = "127.0.0.1:7777"
+reload-port = 7778
 browserquery = "defaults"
 bin-features = ["ssr"]
 lib-features = ["hydrate"]
