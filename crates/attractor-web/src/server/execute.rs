@@ -31,29 +31,44 @@ fn attractor_cli_path() -> String {
 
 /// Start the full execution chain: decompose spec → scaffold pipeline → run.
 ///
-/// 1. Runs `attractor decompose .attractor/spec.md` → captures epic_id
+/// 1. Runs `attractor decompose {project}/.attractor/spec.md` → captures epic_id
 /// 2. Runs `attractor scaffold <epic-id>` → captures pipeline path
 /// 3. Loads and executes pipeline with SSE streaming
+///
+/// # Arguments
+/// - `project_id`: Database ID of the project to execute against
 #[server]
-pub async fn start_execution() -> Result<ExecutionResponse, ServerFnError<NoCustomError>> {
+pub async fn start_execution(project_id: i64) -> Result<ExecutionResponse, ServerFnError<NoCustomError>> {
     use tokio::process::Command;
     use uuid::Uuid;
 
+    // Get the project from the database
+    let pool = leptos::prelude::use_context::<sqlx::SqlitePool>()
+        .ok_or_else(|| ServerFnError::<NoCustomError>::ServerError("No database pool".into()))?;
+
+    let project = crate::server::db::get_project(&pool, project_id)
+        .await
+        .map_err(|e| ServerFnError::<NoCustomError>::ServerError(
+            format!("Failed to get project: {}", e)
+        ))?;
+
     let cli = attractor_cli_path();
     let session_id = Uuid::new_v4().to_string();
-    let spec_path = ".attractor/spec.md";
+    let spec_path = format!("{}/.attractor/spec.md", project.folder_path);
+    let project_dir = std::path::PathBuf::from(&project.folder_path);
 
     // Verify spec file exists
-    if !std::path::Path::new(spec_path).exists() {
+    if !std::path::Path::new(&spec_path).exists() {
         return Err(ServerFnError::<NoCustomError>::ServerError(
-            "Spec file not found at .attractor/spec.md".into(),
+            format!("Spec file not found at {}", spec_path),
         ));
     }
 
     // 1. Decompose: spec → beads epic + tasks
     tracing::info!("Starting decompose of {} (cli: {})", spec_path, cli);
     let decompose_output = Command::new(&cli)
-        .args(["decompose", spec_path])
+        .args(["decompose", &spec_path])
+        .current_dir(&project_dir)
         .output()
         .await
         .map_err(|e| {
@@ -89,6 +104,7 @@ pub async fn start_execution() -> Result<ExecutionResponse, ServerFnError<NoCust
     tracing::info!("Starting scaffold for {}", epic_id);
     let scaffold_output = Command::new(&cli)
         .args(["scaffold", &epic_id])
+        .current_dir(&project_dir)
         .output()
         .await
         .map_err(|e| {
@@ -104,10 +120,11 @@ pub async fn start_execution() -> Result<ExecutionResponse, ServerFnError<NoCust
     }
 
     let pipeline_path = format!("pipelines/{}.dot", epic_id);
+    let full_pipeline_path = project_dir.join(&pipeline_path);
     tracing::info!("Scaffold complete: pipeline={}", pipeline_path);
 
     // 3. Load pipeline and start execution with SSE streaming
-    let dot_source = std::fs::read_to_string(&pipeline_path).map_err(|e| {
+    let dot_source = std::fs::read_to_string(&full_pipeline_path).map_err(|e| {
         ServerFnError::<NoCustomError>::ServerError(format!(
             "Failed to read pipeline file: {}",
             e

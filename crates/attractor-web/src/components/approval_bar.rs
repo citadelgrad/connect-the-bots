@@ -6,6 +6,7 @@ use crate::server::execute::{start_execution, ExecutionPhase};
 /// Triggers decompose → scaffold → pipeline chain.
 #[component]
 pub fn ApprovalBar<F>(
+    project_id: i64,
     enabled: impl Fn() -> bool + Send + Sync + Copy + 'static,
     on_approve: F,
 ) -> impl IntoView
@@ -14,7 +15,7 @@ where
 {
     let (phase, set_phase) = signal(Option::<ExecutionPhase>::None);
 
-    let execute_action = Action::new(move |_: &()| async move { start_execution().await });
+    let execute_action = Action::new(move |_: &()| async move { start_execution(project_id).await });
 
     // Watch for action completion
     Effect::new(move || {

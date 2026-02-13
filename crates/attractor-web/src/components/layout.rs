@@ -40,6 +40,7 @@ pub fn MainLayout() -> impl IntoView {
                         RightPanel::Documents => {
                             view! {
                                 <ApprovalBar
+                                    project_id=1
                                     enabled=can_approve
                                     on_approve=on_approve
                                 />
