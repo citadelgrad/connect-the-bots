@@ -30,7 +30,6 @@ impl DocumentWatcher {
         let (sender, _) = broadcast::channel::<DocumentUpdate>(16);
         let tx = sender.clone();
 
-        let watch_path = watch_dir.clone();
         let mut watcher =
             notify::recommended_watcher(move |res: Result<NotifyEvent, notify::Error>| {
                 if let Ok(event) = res {

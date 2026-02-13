@@ -1,5 +1,4 @@
 /// Output truncation strategies for tool results.
-
 /// How to truncate output that exceeds the maximum character limit.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TruncationMode {

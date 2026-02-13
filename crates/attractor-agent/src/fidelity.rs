@@ -1,9 +1,10 @@
 //! Context fidelity modes control how conversation history is managed as it grows.
 
 /// Fidelity mode for managing conversation context.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum FidelityMode {
     /// Keep full history — no truncation.
+    #[default]
     Full,
     /// Truncate old messages, keeping the most recent N messages.
     Truncate { keep_last: usize },
@@ -13,15 +14,9 @@ pub enum FidelityMode {
     Summary,
 }
 
-impl Default for FidelityMode {
-    fn default() -> Self {
-        FidelityMode::Full
-    }
-}
-
 impl FidelityMode {
     /// Parse from a string attribute value.
-    pub fn from_str(s: &str) -> Self {
+    pub fn parse(s: &str) -> Self {
         match s.to_lowercase().as_str() {
             "full" => FidelityMode::Full,
             "compact" => FidelityMode::Compact,
@@ -69,27 +64,27 @@ mod tests {
 
     #[test]
     fn from_str_parses_full() {
-        assert_eq!(FidelityMode::from_str("full"), FidelityMode::Full);
-        assert_eq!(FidelityMode::from_str("Full"), FidelityMode::Full);
-        assert_eq!(FidelityMode::from_str("FULL"), FidelityMode::Full);
+        assert_eq!(FidelityMode::parse("full"), FidelityMode::Full);
+        assert_eq!(FidelityMode::parse("Full"), FidelityMode::Full);
+        assert_eq!(FidelityMode::parse("FULL"), FidelityMode::Full);
     }
 
     #[test]
     fn from_str_parses_compact() {
-        assert_eq!(FidelityMode::from_str("compact"), FidelityMode::Compact);
-        assert_eq!(FidelityMode::from_str("Compact"), FidelityMode::Compact);
+        assert_eq!(FidelityMode::parse("compact"), FidelityMode::Compact);
+        assert_eq!(FidelityMode::parse("Compact"), FidelityMode::Compact);
     }
 
     #[test]
     fn from_str_parses_summary() {
-        assert_eq!(FidelityMode::from_str("summary"), FidelityMode::Summary);
-        assert_eq!(FidelityMode::from_str("Summary"), FidelityMode::Summary);
+        assert_eq!(FidelityMode::parse("summary"), FidelityMode::Summary);
+        assert_eq!(FidelityMode::parse("Summary"), FidelityMode::Summary);
     }
 
     #[test]
     fn from_str_parses_truncate_colon() {
         assert_eq!(
-            FidelityMode::from_str("truncate:20"),
+            FidelityMode::parse("truncate:20"),
             FidelityMode::Truncate { keep_last: 20 }
         );
     }
@@ -97,7 +92,7 @@ mod tests {
     #[test]
     fn from_str_parses_truncate_parens() {
         assert_eq!(
-            FidelityMode::from_str("truncate(30)"),
+            FidelityMode::parse("truncate(30)"),
             FidelityMode::Truncate { keep_last: 30 }
         );
     }
@@ -106,15 +101,15 @@ mod tests {
     fn from_str_truncate_default() {
         // No number given -> defaults to 50
         assert_eq!(
-            FidelityMode::from_str("truncate"),
+            FidelityMode::parse("truncate"),
             FidelityMode::Truncate { keep_last: 50 }
         );
     }
 
     #[test]
     fn from_str_unknown_defaults_to_full() {
-        assert_eq!(FidelityMode::from_str("garbage"), FidelityMode::Full);
-        assert_eq!(FidelityMode::from_str(""), FidelityMode::Full);
+        assert_eq!(FidelityMode::parse("garbage"), FidelityMode::Full);
+        assert_eq!(FidelityMode::parse(""), FidelityMode::Full);
     }
 
     #[test]

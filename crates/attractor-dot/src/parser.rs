@@ -381,19 +381,22 @@ fn statements(input: &mut &str) -> ModalResult<Vec<Statement>> {
     Ok(stmts)
 }
 
-/// Merge statements into a DotGraph-like structure.
-fn merge_statements(
-    stmts: Vec<Statement>,
-    parent_node_defaults: &HashMap<String, AttributeValue>,
-    parent_edge_defaults: &HashMap<String, AttributeValue>,
-) -> (
+type MergeResult = (
     HashMap<String, AttributeValue>,   // graph attrs
     HashMap<String, NodeDef>,          // nodes
     Vec<EdgeDef>,                      // edges
     Vec<SubgraphDef>,                  // subgraphs
     HashMap<String, AttributeValue>,   // node defaults
     HashMap<String, AttributeValue>,   // edge defaults
-) {
+);
+
+/// Merge statements into a DotGraph-like structure.
+#[allow(clippy::type_complexity)]
+fn merge_statements(
+    stmts: Vec<Statement>,
+    parent_node_defaults: &HashMap<String, AttributeValue>,
+    parent_edge_defaults: &HashMap<String, AttributeValue>,
+) -> MergeResult {
     let mut graph_attrs = HashMap::new();
     let mut nodes = HashMap::new();
     let mut edges = Vec::new();
