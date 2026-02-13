@@ -4,10 +4,12 @@
 //! via SSE to the document viewer.
 
 use axum::response::sse::{Event, KeepAlive, Sse};
-use futures::stream::Stream;
-use serde::Serialize;
+use axum::extract::{Query};
+use futures::stream::{Stream, BoxStream};
+use serde::{Serialize, Deserialize};
 use std::convert::Infallible;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use tokio::sync::broadcast;
 
 #[derive(Serialize, Clone, Debug)]
@@ -118,18 +120,84 @@ impl DocumentWatcher {
     }
 }
 
-/// SSE endpoint handler: `GET /api/documents/stream`
+#[derive(Deserialize)]
+pub struct DocStreamParams {
+    project_id: i64,
+}
+
+/// Get or create a watcher for a project from the shared state.
+fn get_or_create_watcher(
+    state: &crate::server::AppState,
+    project_id: i64,
+    folder_path: &str,
+) -> Result<Arc<DocumentWatcher>, String> {
+    let mut watchers = state.watchers.lock().unwrap();
+
+    // If watcher already exists, return it
+    if let Some(watcher) = watchers.get(&project_id) {
+        return Ok(watcher.clone());
+    }
+
+    // Create new watcher for this project
+    let watch_dir = PathBuf::from(folder_path).join(".attractor");
+    let watcher = Arc::new(
+        DocumentWatcher::new(watch_dir, state.db.clone(), project_id)
+            .map_err(|e| format!("Failed to create document watcher: {}", e))?,
+    );
+
+    watchers.insert(project_id, watcher.clone());
+    Ok(watcher)
+}
+
+/// SSE endpoint handler: `GET /api/documents/stream?project_id=<id>`
 ///
-/// Sends initial document state, then streams live updates.
+/// Sends initial document state from DB, then streams live updates for a specific project.
 pub async fn document_stream(
+    Query(params): Query<DocStreamParams>,
     axum::extract::State(state): axum::extract::State<crate::server::AppState>,
-) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
-    tracing::info!("Document SSE connection established");
+) -> Sse<BoxStream<'static, Result<Event, Infallible>>> {
+    tracing::info!("Document SSE connection established for project_id: {}", params.project_id);
 
-    let rx = state.doc_watcher.subscribe();
+    // Look up the project to get its folder path
+    let project = match crate::server::db::get_project(&state.db, params.project_id).await {
+        Ok(p) => p,
+        Err(e) => {
+            tracing::error!("Failed to get project {}: {}", params.project_id, e);
+            let error_event = vec![Ok(Event::default()
+                .event("error")
+                .data(format!("Project not found: {}", params.project_id)))];
+            let stream = futures::stream::iter(error_event).boxed();
+            return Sse::new(stream).keep_alive(KeepAlive::default());
+        }
+    };
 
-    // Send initial state for any existing documents
-    let initial_events = load_initial_documents(&state.attractor_dir);
+    // Get or create watcher for this project
+    let watcher = match get_or_create_watcher(&state, params.project_id, &project.folder_path) {
+        Ok(w) => w,
+        Err(e) => {
+            tracing::error!("Failed to create watcher: {}", e);
+            let error_event = vec![Ok(Event::default().event("error").data(e))];
+            let stream = futures::stream::iter(error_event).boxed();
+            return Sse::new(stream).keep_alive(KeepAlive::default());
+        }
+    };
+
+    let rx = watcher.subscribe();
+
+    // Load initial documents from database
+    let initial_events = match crate::server::db::get_documents(&state.db, params.project_id).await {
+        Ok(docs) => docs
+            .into_iter()
+            .map(|doc| DocumentUpdate {
+                doc_type: doc.doc_type,
+                content: Some(doc.content),
+            })
+            .collect::<Vec<_>>(),
+        Err(e) => {
+            tracing::error!("Failed to load initial documents: {}", e);
+            Vec::new()
+        }
+    };
 
     let initial_stream = futures::stream::iter(initial_events.into_iter().map(|update| {
         let data = serde_json::to_string(&update).unwrap_or_default();
@@ -147,7 +215,8 @@ pub async fn document_stream(
     });
 
     use futures::StreamExt;
-    Sse::new(initial_stream.chain(live_stream)).keep_alive(KeepAlive::default())
+    let combined = initial_stream.chain(live_stream).boxed();
+    Sse::new(combined).keep_alive(KeepAlive::default())
 }
 
 /// Load existing PRD/Spec files for initial SSE state.

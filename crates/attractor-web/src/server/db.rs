@@ -153,6 +153,26 @@ pub async fn list_open_projects(pool: &SqlitePool) -> Result<Vec<Project>, sqlx:
         .collect())
 }
 
+/// Get a single project by ID.
+pub async fn get_project(pool: &SqlitePool, project_id: i64) -> Result<Project, sqlx::Error> {
+    let row = sqlx::query_as::<_, (i64, String, String)>(
+        r#"
+        SELECT id, folder_path, name
+        FROM projects
+        WHERE id = ?
+        "#,
+    )
+    .bind(project_id)
+    .fetch_one(pool)
+    .await?;
+
+    Ok(Project {
+        id: row.0,
+        folder_path: row.1,
+        name: row.2,
+    })
+}
+
 /// Close a project (set is_open=0). Does not delete.
 pub async fn close_project(pool: &SqlitePool, project_id: i64) -> Result<(), sqlx::Error> {
     sqlx::query(
