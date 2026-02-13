@@ -1,0 +1,23 @@
+crates/attractor-pipeline/tests/integration.rs
+  6205139dd8ab9868 293
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.3",
+  "base_commit_sha": "51c30580a588240ea115fb084bf23c32b0849603",
+  "prompts": {
+    "6205139dd8ab9868": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "edbb60f9-09df-4560-88c8-a94751220b1a",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}
