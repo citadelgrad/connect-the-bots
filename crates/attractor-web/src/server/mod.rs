@@ -2,6 +2,8 @@ pub mod execute;
 
 // SSR-only modules (no client stubs needed)
 #[cfg(feature = "ssr")]
+pub mod db;
+#[cfg(feature = "ssr")]
 pub mod documents;
 #[cfg(feature = "ssr")]
 pub mod stream;
