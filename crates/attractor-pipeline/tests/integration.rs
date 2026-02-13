@@ -290,7 +290,7 @@ async fn stylesheet_applies_model_to_nodes() {
     );
 
     // The graph should still be valid and executable after stylesheet application
-    let result = PipelineExecutor::with_default_registry()
+    let result = executor()
         .run(&graph)
         .await
         .expect("styled pipeline should execute");
