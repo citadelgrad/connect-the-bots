@@ -1,0 +1,9 @@
+{
+  "name": "attractor-web",
+  "private": true,
+  "dependencies": {
+    "@xterm/xterm": "^5.5",
+    "@xterm/addon-fit": "^0.10",
+    "@xterm/addon-web-links": "^0.11"
+  }
+}

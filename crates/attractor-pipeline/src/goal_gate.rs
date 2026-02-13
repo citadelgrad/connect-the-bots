@@ -21,18 +21,18 @@ pub fn check_goal_gates(
 ) -> GoalGateResult {
     for (node_id, outcome) in node_outcomes {
         if let Some(node) = graph.node(node_id) {
-            if node.goal_gate {
-                if !matches!(
+            if node.goal_gate
+                && !matches!(
                     outcome.status,
                     StageStatus::Success | StageStatus::PartialSuccess
-                ) {
-                    let retry = resolve_retry_target(node, graph);
-                    return GoalGateResult {
-                        all_satisfied: false,
-                        failed_node_id: Some(node_id.clone()),
-                        retry_target: retry,
-                    };
-                }
+                )
+            {
+                let retry = resolve_retry_target(node, graph);
+                return GoalGateResult {
+                    all_satisfied: false,
+                    failed_node_id: Some(node_id.clone()),
+                    retry_target: retry,
+                };
             }
         }
     }

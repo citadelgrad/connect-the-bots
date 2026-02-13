@@ -209,9 +209,12 @@ mod tests {
             A [weight=3.14]
         }"#;
         let graph = parse(input).unwrap();
+        // Using explicit literal to avoid clippy::approx_constant (not actually using PI)
+        #[allow(clippy::approx_constant)]
+        let expected = 3.14_f64;
         assert_eq!(
             graph.nodes.get("A").unwrap().attrs.get("weight"),
-            Some(&AttributeValue::Float(3.14))
+            Some(&AttributeValue::Float(expected))
         );
     }
 

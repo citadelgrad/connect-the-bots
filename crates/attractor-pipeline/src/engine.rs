@@ -93,7 +93,6 @@ impl PipelineExecutor {
         validate_or_raise(graph)?;
 
         // Phase 3: Initialize (merge graph attrs into existing context)
-        let context = context;
         for (key, val) in &graph.attrs {
             context.set(key, attr_to_json(val)).await;
         }

@@ -64,7 +64,7 @@ impl GeminiAdapter {
             .messages
             .iter()
             .filter(|m| m.role != Role::System)
-            .map(|m| convert_message(m))
+            .map(convert_message)
             .collect();
 
         // 3. Build body
@@ -101,7 +101,7 @@ impl GeminiAdapter {
         if !request.stop_sequences.is_empty() {
             gen_config["stopSequences"] = json!(request.stop_sequences);
         }
-        if gen_config.as_object().map_or(false, |o| !o.is_empty()) {
+        if gen_config.as_object().is_some_and(|o| !o.is_empty()) {
             body["generationConfig"] = gen_config;
         }
 

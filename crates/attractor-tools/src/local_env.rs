@@ -50,9 +50,9 @@ impl LocalExecutionEnvironment {
         let mut result = HashMap::new();
         for (key, value) in std::env::vars() {
             let lower = key.to_lowercase();
-            if always_include.contains(&key.as_str()) {
-                result.insert(key, value);
-            } else if !exclude_suffixes.iter().any(|s| lower.ends_with(s)) {
+            if always_include.contains(&key.as_str())
+                || !exclude_suffixes.iter().any(|s| lower.ends_with(s))
+            {
                 result.insert(key, value);
             }
         }

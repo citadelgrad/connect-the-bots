@@ -48,7 +48,7 @@ impl OpenAiAdapter {
         let input: Vec<serde_json::Value> = request
             .messages
             .iter()
-            .map(|msg| convert_message(msg))
+            .map(convert_message)
             .collect();
 
         // 2. Build body

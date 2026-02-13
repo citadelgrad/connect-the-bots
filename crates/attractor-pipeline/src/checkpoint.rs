@@ -24,6 +24,9 @@ pub struct PipelineCheckpoint {
     pub context_snapshot: HashMap<String, serde_json::Value>,
     /// RFC 3339 timestamp of when the checkpoint was created.
     pub timestamp: String,
+    /// Optional session ID for tracking execution sessions (e.g., for SSE streaming).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
 }
 
 impl PipelineCheckpoint {
@@ -40,6 +43,25 @@ impl PipelineCheckpoint {
             node_outcomes,
             context_snapshot,
             timestamp: chrono::Utc::now().to_rfc3339(),
+            session_id: None,
+        }
+    }
+
+    /// Create a new checkpoint with a session ID.
+    pub fn with_session_id(
+        current_node_id: String,
+        completed_nodes: Vec<String>,
+        node_outcomes: HashMap<String, attractor_types::Outcome>,
+        context_snapshot: HashMap<String, serde_json::Value>,
+        session_id: String,
+    ) -> Self {
+        Self {
+            current_node_id,
+            completed_nodes,
+            node_outcomes,
+            context_snapshot,
+            timestamp: chrono::Utc::now().to_rfc3339(),
+            session_id: Some(session_id),
         }
     }
 }
@@ -162,5 +184,42 @@ mod tests {
         let orig_outcome = cp.node_outcomes.get("node_a").unwrap();
         let rest_outcome = restored.node_outcomes.get("node_a").unwrap();
         assert_eq!(rest_outcome.notes, orig_outcome.notes);
+    }
+
+    #[tokio::test]
+    async fn session_id_serialization() {
+        let mut outcomes = HashMap::new();
+        outcomes.insert("node_a".into(), Outcome::success("done"));
+
+        let mut ctx = HashMap::new();
+        ctx.insert("key".into(), serde_json::json!("value"));
+
+        let cp = PipelineCheckpoint::with_session_id(
+            "node_b".into(),
+            vec!["node_a".into()],
+            outcomes,
+            ctx,
+            "test-session-123".into(),
+        );
+
+        let json = serde_json::to_string(&cp).unwrap();
+        let restored: PipelineCheckpoint = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(restored.session_id, Some("test-session-123".to_string()));
+    }
+
+    #[tokio::test]
+    async fn backward_compatibility_without_session_id() {
+        // Simulate old checkpoint JSON without session_id field
+        let json = r#"{
+            "current_node_id": "node_b",
+            "completed_nodes": ["node_a"],
+            "node_outcomes": {},
+            "context_snapshot": {},
+            "timestamp": "2024-01-01T00:00:00Z"
+        }"#;
+
+        let restored: PipelineCheckpoint = serde_json::from_str(json).unwrap();
+        assert_eq!(restored.session_id, None);
     }
 }

@@ -18,8 +18,34 @@ digraph CodeReview {
 }
 ```
 
+## Claude Code Integration
+
+Attractor's default `codergen` handler executes pipeline nodes by shelling out to your local [Claude Code](https://docs.anthropic.com/en/docs/claude-code) installation (`claude` CLI). This means each node in your pipeline gets the full agentic capabilities of Claude Code — file editing, bash execution, multi-turn tool use — powered by your existing Claude subscription with no separate API keys required.
+
+Under the hood, each `codergen` node runs:
+
+```
+claude -p "<prompt>" --output-format json
+```
+
+The handler parses Claude Code's JSON response to extract the result, cost, turn count, and success/failure status, then feeds that context forward to downstream nodes.
+
+### Node attributes for Claude Code nodes
+
+| Attribute | Description |
+|-----------|-------------|
+| `prompt` (required) | The task prompt sent to Claude Code |
+| `llm_model` | Model override (e.g. `"sonnet"`, `"haiku"`, `"opus"`) |
+| `allowed_tools` | Comma-separated list of tools Claude Code may use |
+| `max_budget_usd` | Spending cap for this node |
+
+Conditional nodes (`shape=diamond`) automatically instruct Claude Code to select an outgoing edge label, enabling LLM-driven branching.
+
+For nodes that only need a single LLM completion without tool use, Attractor also provides direct API handlers for OpenAI, Anthropic, and Gemini via the `attractor-llm` crate.
+
 ## Features
 
+- **Claude Code as execution engine** -- Pipeline nodes run via your local `claude` CLI, getting full agentic tool use with no extra API keys
 - **DOT pipeline definitions** -- Standard Graphviz digraph syntax with typed attributes (strings, integers, floats, booleans, durations)
 - **Planning workflow** -- Generate PRD and spec documents from templates or AI prompts, decompose specs into beads issues, scaffold pipelines from epics
 - **Beads integration** -- Decompose specs into epics and tasks, scaffold pipelines from beads epics, close issues as pipeline nodes complete
@@ -114,7 +140,9 @@ attractor run templates/plan-to-execute.dot -w .
 
 ## Environment Variables
 
-Set API keys for the LLM providers you use:
+The default `codergen` handler uses your local Claude Code installation and requires no API keys — it runs on your Claude subscription.
+
+For direct API calls via the `attractor-llm` crate (OpenAI, Anthropic, or Gemini handlers), set the relevant keys:
 
 ```sh
 export OPENAI_API_KEY=...
