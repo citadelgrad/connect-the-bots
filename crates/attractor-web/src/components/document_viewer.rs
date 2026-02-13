@@ -3,6 +3,8 @@ use leptos::prelude::*;
 #[allow(unused_imports)]
 use crate::components::markdown_render::render_markdown;
 
+use crate::server::projects::get_cached_documents;
+
 #[cfg(feature = "hydrate")]
 use serde::Deserialize;
 
@@ -22,14 +24,18 @@ enum DocTab {
     Spec,
 }
 
-/// Document viewer that subscribes to SSE at `/api/documents/stream`
+/// Document viewer that subscribes to SSE at `/api/documents/stream?project_id=<id>`
 /// for live updates as Claude Code writes PRD/Spec files.
+///
+/// Loads cached documents from SQLite on mount for instant display, then connects
+/// to SSE for live updates.
 ///
 /// At narrow widths, PRD and Spec are shown as tabs in a single panel.
 /// At wide widths (fullscreen), each gets its own column — the parent
 /// layout switches to 3-column mode via CSS.
 #[component]
 pub fn DocumentViewer<FP, FS>(
+    project_id: i64,
     on_prd_change: FP,
     on_spec_change: FS,
 ) -> impl IntoView
@@ -41,6 +47,23 @@ where
     let (prd_content, set_prd_content) = signal(String::new());
     let (spec_content, set_spec_content) = signal(String::new());
 
+    // Load cached documents from SQLite on mount
+    let cached = Resource::new(move || project_id, |id| get_cached_documents(id));
+
+    // Update signals when cached data loads
+    Effect::new(move || {
+        if let Some(Ok(docs)) = cached.get() {
+            if let Some(prd) = docs.prd {
+                set_prd_content.set(prd.clone());
+                on_prd_change(!prd.is_empty());
+            }
+            if let Some(spec) = docs.spec {
+                set_spec_content.set(spec.clone());
+                on_spec_change(!spec.is_empty());
+            }
+        }
+    });
+
     // Subscribe to document updates via SSE
     #[cfg(feature = "hydrate")]
     {
@@ -48,7 +71,7 @@ where
             leptos::task::spawn_local(async move {
                 use futures::StreamExt as _;
 
-                let url = "/api/documents/stream";
+                let url = format!("/api/documents/stream?project_id={}", project_id);
                 match gloo_net::eventsource::futures::EventSource::new(url) {
                     Ok(mut es) => {
                         let mut stream = es.subscribe("document_update").unwrap();

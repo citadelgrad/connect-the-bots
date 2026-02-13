@@ -40,10 +40,12 @@ pub struct DirEntry {
     pub is_dir: bool,
 }
 
-#[cfg(feature = "ssr")]
+// Server function implementations (Leptos #[server] macro generates client stubs automatically)
 mod ssr_impl {
     use super::*;
     use leptos::prelude::*;
+
+    #[cfg(feature = "ssr")]
     use std::fs;
 
     /// List all open projects sorted by most recently used.
@@ -222,6 +224,5 @@ mod ssr_impl {
     }
 }
 
-// Re-export server functions for the frontend
-#[cfg(feature = "ssr")]
+// Re-export server functions (Leptos #[server] macro handles client/server split)
 pub use ssr_impl::*;
