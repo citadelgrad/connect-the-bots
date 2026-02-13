@@ -1,0 +1,38 @@
+crates/attractor-web/src/components/document_viewer.rs
+  7de8b9bc9046f918 6-7,27,30-32,38,50-66,74
+crates/attractor-web/src/server/projects.rs
+  7de8b9bc9046f918 43,47-48,227
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.3",
+  "base_commit_sha": "bb2919a2339768f0e767750aa508e985376581bc",
+  "prompts": {
+    "6f41c7bf83ed396d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ffe97a67-b23b-4c15-8c23-e7983ce5cb58",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    },
+    "7de8b9bc9046f918": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "24d95fe1-6236-4470-8c98-7f179bdf715b",
+        "model": "unknown"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 65,
+      "total_deletions": 41,
+      "accepted_lines": 29,
+      "overriden_lines": 0
+    }
+  }
+}
