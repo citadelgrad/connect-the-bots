@@ -37,7 +37,21 @@ body {
     height: 100vh;
 }
 
-// Full-height app layout
+// Workspace layout (sidebar + content)
+.app-workspace {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.workspace-content {
+    flex: 1;
+    min-width: 0;  // prevent flex child from overflowing
+    display: flex;
+    flex-direction: column;
+}
+
+// Full-height app layout (inside workspace content)
 .app-layout {
     display: flex;
     flex-direction: column;
@@ -511,4 +525,304 @@ body {
         line-height: 1.5;
         color: $subtext;
     }
+}
+
+// Project Sidebar
+.project-sidebar {
+    width: 220px;
+    min-width: 220px;
+    background: $mantle;
+    border-right: 1px solid $surface0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.sidebar-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid $surface0;
+    flex-shrink: 0;
+}
+
+.sidebar-new-project {
+    width: 100%;
+    padding: 8px 16px;
+    background: transparent;
+    border: none;
+    color: $primary;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    font-size: 0.875rem;
+    transition: background 0.15s;
+
+    &:hover {
+        background: rgba($primary, 0.1);
+    }
+}
+
+.sidebar-projects {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.project-entry {
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    cursor: pointer;
+    color: $subtext;
+    border-left: 3px solid transparent;
+    transition: all 0.15s;
+    font-size: 0.875rem;
+
+    &:hover {
+        background: $surface0;
+        color: $text;
+    }
+
+    &.active {
+        background: $surface0;
+        color: $text;
+        border-left-color: $primary;
+    }
+}
+
+.project-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.project-close {
+    margin-left: 4px;
+    padding: 2px 4px;
+    background: transparent;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    opacity: 0;
+    font-size: 1rem;
+    line-height: 1;
+    transition: opacity 0.15s, color 0.15s;
+
+    .project-entry:hover & {
+        opacity: 0.6;
+    }
+
+    &:hover {
+        opacity: 1;
+        color: $error;
+    }
+}
+
+.sidebar-empty {
+    padding: 24px 16px;
+    text-align: center;
+    color: $subtext;
+    font-size: 0.875rem;
+}
+
+// Folder Picker Modal
+.folder-picker-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+.folder-picker-modal {
+    background: $base;
+    border: 1px solid $surface0;
+    border-radius: 8px;
+    width: 600px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+}
+
+.folder-picker-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid $surface0;
+    flex-shrink: 0;
+
+    h2 {
+        font-size: 1rem;
+        font-weight: 600;
+        margin: 0;
+    }
+}
+
+.close-btn {
+    background: transparent;
+    border: none;
+    color: $subtext;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    transition: color 0.15s;
+
+    &:hover {
+        color: $text;
+    }
+}
+
+.folder-picker-content {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    gap: 20px;
+}
+
+.input-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    h3 {
+        font-size: 0.875rem;
+        font-weight: 600;
+        margin: 0;
+        color: $text;
+    }
+}
+
+.path-input {
+    background: $mantle;
+    border: 1px solid $surface0;
+    border-radius: 4px;
+    padding: 8px 12px;
+    color: $text;
+    font-family: inherit;
+    font-size: 0.875rem;
+    transition: border-color 0.15s;
+
+    &:focus {
+        border-color: $primary;
+        outline: none;
+    }
+
+    &::placeholder {
+        color: $overlay;
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+}
+
+.open-btn,
+.select-btn {
+    padding: 8px 16px;
+    background: $primary;
+    color: $base;
+    border: none;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: background 0.15s;
+
+    &:hover:not(:disabled) {
+        background: $primary-hover;
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+}
+
+.divider {
+    text-align: center;
+    color: $overlay;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.browser-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    h3 {
+        font-size: 0.875rem;
+        font-weight: 600;
+        margin: 0;
+        color: $text;
+    }
+}
+
+.breadcrumb {
+    padding: 8px;
+    background: $mantle;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+.breadcrumb-path {
+    color: $subtext;
+    word-break: break-all;
+}
+
+.directory-list {
+    background: $mantle;
+    border: 1px solid $surface0;
+    border-radius: 4px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.dir-entry {
+    display: flex;
+    align-items: center;
+    padding: 6px 12px;
+    cursor: pointer;
+    color: $text;
+    font-size: 0.875rem;
+    transition: background 0.15s;
+
+    &:hover {
+        background: $surface0;
+    }
+}
+
+.dir-icon {
+    margin-right: 8px;
+    color: $primary;
+}
+
+.dir-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.loading-indicator {
+    padding: 12px;
+    text-align: center;
+    color: $subtext;
+    font-size: 0.875rem;
+}
+
+.error-message {
+    padding: 8px;
+    background: rgba($error, 0.1);
+    border: 1px solid rgba($error, 0.3);
+    border-radius: 4px;
+    color: $error;
+    font-size: 0.85rem;
 }
