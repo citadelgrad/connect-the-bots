@@ -22,6 +22,9 @@
 //!
 //! The WebSocket carries a mix of JSON control messages and raw terminal bytes:
 //!
+//! - **Connection URL**: `ws://host/path?session=<id>&folder=<path>`
+//!   - `session` (optional): reconnect to existing session by ID
+//!   - `folder` (optional): working directory for new PTY sessions
 //! - **Server → Client** (first msg): `{"type":"session","session_id":"..."}`
 //! - **Server → Client** (ongoing): binary frames of PTY stdout
 //! - **Client → Server**: binary frames of keyboard input
@@ -100,10 +103,11 @@ struct ResizeEvent {
 #[derive(Deserialize)]
 pub struct WsQuery {
     session: Option<String>,
+    folder: Option<String>,
 }
 
-/// Spawn a new claude PTY. If `continue_session` is true, uses `--continue`.
-fn spawn_claude_pty(continue_session: bool) -> Result<TerminalSession, String> {
+/// Spawn a new claude PTY in the specified working directory.
+fn spawn_claude_pty(cwd: &std::path::Path) -> Result<TerminalSession, String> {
     let pty_system = native_pty_system();
 
     let pty_pair = pty_system
@@ -116,12 +120,7 @@ fn spawn_claude_pty(continue_session: bool) -> Result<TerminalSession, String> {
         .map_err(|e| format!("Failed to open PTY: {e}"))?;
 
     let mut cmd = CommandBuilder::new("claude");
-    if continue_session {
-        cmd.arg("--continue");
-    }
-    if let Ok(cwd) = std::env::current_dir() {
-        cmd.cwd(cwd);
-    }
+    cmd.cwd(cwd);
 
     let child = pty_pair
         .slave
@@ -178,7 +177,27 @@ async fn handle_terminal_socket(ws: WebSocket, query: WsQuery, state: super::App
                 "Session {} not found (server restarted), spawning fresh claude",
                 id
             );
-            match spawn_claude_pty(false) {
+
+            // Determine the working directory
+            let cwd = if let Some(ref folder_path) = query.folder {
+                let path = std::path::Path::new(folder_path);
+                if path.exists() && path.is_dir() {
+                    path
+                } else {
+                    tracing::warn!("Invalid folder path: {}, falling back to current_dir", folder_path);
+                    std::env::current_dir()
+                        .as_ref()
+                        .map(|p| p.as_path())
+                        .unwrap_or_else(|_| std::path::Path::new("/"))
+                }
+            } else {
+                std::env::current_dir()
+                    .as_ref()
+                    .map(|p| p.as_path())
+                    .unwrap_or_else(|_| std::path::Path::new("/"))
+            };
+
+            match spawn_claude_pty(cwd) {
                 Ok(s) => {
                     let session = Arc::new(s);
                     let new_id = uuid::Uuid::new_v4().to_string();
@@ -193,7 +212,26 @@ async fn handle_terminal_socket(ws: WebSocket, query: WsQuery, state: super::App
         }
     } else {
         // Brand new session
-        match spawn_claude_pty(false) {
+        // Determine the working directory
+        let cwd = if let Some(ref folder_path) = query.folder {
+            let path = std::path::Path::new(folder_path);
+            if path.exists() && path.is_dir() {
+                path
+            } else {
+                tracing::warn!("Invalid folder path: {}, falling back to current_dir", folder_path);
+                std::env::current_dir()
+                    .as_ref()
+                    .map(|p| p.as_path())
+                    .unwrap_or_else(|_| std::path::Path::new("/"))
+            }
+        } else {
+            std::env::current_dir()
+                .as_ref()
+                .map(|p| p.as_path())
+                .unwrap_or_else(|_| std::path::Path::new("/"))
+        };
+
+        match spawn_claude_pty(cwd) {
             Ok(s) => {
                 let session = Arc::new(s);
                 let id = uuid::Uuid::new_v4().to_string();
