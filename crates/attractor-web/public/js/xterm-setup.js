@@ -3,7 +3,10 @@ import { Terminal } from 'https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/+esm';
 import { FitAddon } from 'https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/+esm';
 import { WebLinksAddon } from 'https://cdn.jsdelivr.net/npm/@xterm/addon-web-links@0.11.0/+esm';
 
-window.initTerminal = function(containerId) {
+// Global registry for terminal instances to enable cleanup
+window._terminalInstances = window._terminalInstances || {};
+
+window.initTerminal = function(containerId, folderPath) {
     const container = document.getElementById(containerId);
     if (!container) {
         console.error('Terminal container not found:', containerId);
@@ -50,32 +53,35 @@ window.initTerminal = function(containerId) {
     const RECONNECT_DELAY = 1000;
 
     function getSessionId() {
-        return sessionStorage.getItem('terminal_session_id');
+        return sessionStorage.getItem('terminal_session_' + containerId);
     }
 
     function setSessionId(id) {
-        sessionStorage.setItem('terminal_session_id', id);
+        sessionStorage.setItem('terminal_session_' + containerId, id);
     }
 
     function buildWsUrl() {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         let url = protocol + '//' + window.location.host + '/api/terminal/ws';
         const sid = getSessionId();
-        if (sid) {
-            url += '?session=' + encodeURIComponent(sid);
-        }
+        const params = [];
+        if (sid) params.push('session=' + encodeURIComponent(sid));
+        if (folderPath) params.push('folder=' + encodeURIComponent(folderPath));
+        if (params.length) url += '?' + params.join('&');
         return url;
     }
 
     function connect() {
-        if (reconnectTimer) {
-            clearTimeout(reconnectTimer);
-            reconnectTimer = null;
+        const instance = window._terminalInstances[containerId];
+        if (instance.reconnectTimer) {
+            clearTimeout(instance.reconnectTimer);
+            instance.reconnectTimer = null;
         }
 
         const wsUrl = buildWsUrl();
         ws = new WebSocket(wsUrl);
         ws.binaryType = 'arraybuffer';
+        instance.ws = ws;
 
         ws.onopen = function() {
             ws.send(JSON.stringify({ type: 'resize', cols: terminal.cols, rows: terminal.rows }));
@@ -111,8 +117,9 @@ window.initTerminal = function(containerId) {
     }
 
     function scheduleReconnect() {
-        if (!reconnectTimer) {
-            reconnectTimer = setTimeout(connect, RECONNECT_DELAY);
+        const instance = window._terminalInstances[containerId];
+        if (!instance.reconnectTimer) {
+            instance.reconnectTimer = setTimeout(connect, RECONNECT_DELAY);
         }
     }
 
@@ -127,8 +134,57 @@ window.initTerminal = function(containerId) {
         }
     });
 
-    new ResizeObserver(function() { fitAddon.fit(); }).observe(container);
+    const resizeObserver = new ResizeObserver(function() { fitAddon.fit(); });
+    resizeObserver.observe(container);
+
+    // Store all resources in global registry for cleanup
+    window._terminalInstances[containerId] = {
+        ws: null,
+        terminal: terminal,
+        reconnectTimer: null,
+        fitAddon: fitAddon,
+        resizeObserver: resizeObserver
+    };
 
     connect();
-    console.log('Terminal initialized');
+    console.log('Terminal initialized:', containerId);
+};
+
+// Cleanup function to dispose terminal and release resources
+window.disposeTerminal = function(containerId) {
+    const instance = window._terminalInstances[containerId];
+    if (!instance) {
+        console.warn('No terminal instance found for:', containerId);
+        return;
+    }
+
+    // Close WebSocket
+    if (instance.ws) {
+        instance.ws.close();
+        instance.ws = null;
+    }
+
+    // Dispose xterm Terminal
+    if (instance.terminal) {
+        instance.terminal.dispose();
+    }
+
+    // Cancel reconnect timer
+    if (instance.reconnectTimer) {
+        clearTimeout(instance.reconnectTimer);
+        instance.reconnectTimer = null;
+    }
+
+    // Disconnect ResizeObserver
+    if (instance.resizeObserver) {
+        instance.resizeObserver.disconnect();
+    }
+
+    // Remove sessionStorage key
+    sessionStorage.removeItem('terminal_session_' + containerId);
+
+    // Remove from registry
+    delete window._terminalInstances[containerId];
+
+    console.log('Terminal disposed:', containerId);
 };
