@@ -438,7 +438,9 @@ async fn cmd_decompose(spec_path: &std::path::Path, dry_run: bool) -> anyhow::Re
         8. Echo the epic ID at the end: echo $EPIC_ID\n\
         9. Priority should be P2 for most tasks unless critical (P1) or backlog (P3/P4)\n\
         10. Task descriptions should be 1-2 sentences summarizing what needs to be done\n\
-        11. CRITICAL: Do NOT wrap output in markdown code fences. Start directly with 'set -e'",
+        11. CRITICAL: Do NOT wrap output in markdown code fences. Start directly with 'set -e'\n\
+        12. CRITICAL: All --title and --description values MUST be in single quotes. Escape any single quotes inside values with '\\'' (end quote, escaped quote, start quote)\n\
+        13. Do NOT use parentheses, backticks, or dollar signs inside quoted strings — keep descriptions plain text only",
         spec_content
     );
 
@@ -470,19 +472,17 @@ async fn cmd_decompose(spec_path: &std::path::Path, dry_run: bool) -> anyhow::Re
         .ok_or_else(|| anyhow::anyhow!("Claude output missing 'result' field"))?
         .to_string();
 
-    // Strip markdown code fences if present
-    if shell_commands.starts_with("```") {
-        let lines: Vec<&str> = shell_commands.lines().collect();
-        if lines.len() > 2 && lines[0].starts_with("```") && lines[lines.len() - 1] == "```" {
-            shell_commands = lines[1..lines.len() - 1].join("\n");
-        }
+    // Strip markdown code fences if present (handles ```bash, ```sh, ```, etc.)
+    let lines: Vec<&str> = shell_commands.lines().collect();
+    if lines.len() > 2 && lines[0].starts_with("```") && lines.last().map_or(false, |l| l.trim() == "```") {
+        shell_commands = lines[1..lines.len() - 1].join("\n");
     }
 
     // Prepend shebang (and set -e if not already present)
     let full_script = if shell_commands.starts_with("set -e") {
-        format!("#!/bin/sh\n{}", shell_commands)
+        format!("#!/bin/bash\n{}", shell_commands)
     } else {
-        format!("#!/bin/sh\nset -e\n\n{}", shell_commands)
+        format!("#!/bin/bash\nset -e\n\n{}", shell_commands)
     };
 
     if dry_run {
@@ -504,8 +504,8 @@ async fn cmd_decompose(spec_path: &std::path::Path, dry_run: bool) -> anyhow::Re
         std::fs::set_permissions(&temp_script, perms)?;
     }
 
-    // Execute with sh -e
-    let exec_result = tokio::process::Command::new("sh")
+    // Execute with bash -e
+    let exec_result = tokio::process::Command::new("bash")
         .arg("-e")
         .arg(&temp_script)
         .output()
