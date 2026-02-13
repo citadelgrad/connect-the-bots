@@ -6,15 +6,22 @@ pub mod db;
 #[cfg(feature = "ssr")]
 pub mod documents;
 #[cfg(feature = "ssr")]
+pub mod projects;
+#[cfg(feature = "ssr")]
 pub mod stream;
 #[cfg(feature = "ssr")]
 pub mod terminal;
+
+#[cfg(feature = "ssr")]
+use std::collections::HashMap;
+#[cfg(feature = "ssr")]
+use std::sync::{Arc, Mutex};
 
 /// Shared application state accessible from Axum routes.
 #[cfg(feature = "ssr")]
 #[derive(Clone)]
 pub struct AppState {
-    pub doc_watcher: std::sync::Arc<documents::DocumentWatcher>,
-    pub attractor_dir: std::path::PathBuf,
+    pub db: sqlx::SqlitePool,
+    pub watchers: Arc<Mutex<HashMap<i64, Arc<documents::DocumentWatcher>>>>,
     pub terminal_sessions: terminal::TerminalSessions,
 }
