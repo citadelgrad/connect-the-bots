@@ -1,0 +1,29 @@
+crates/attractor-cli/src/main.rs
+  876c49f5068ad554 83,85-88,132-136,138,510-513,550,603,612-614,617,621-623,627-662,669-678,682-709,762
+Cargo.toml
+  876c49f5068ad554 15
+crates/attractor-web/Cargo.toml
+  876c49f5068ad554 3
+crates/attractor-pipeline/src/handlers/mod.rs
+  876c49f5068ad554 247-280
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.3",
+  "base_commit_sha": "fd50fb9ac469188ea22d9bc5f35b5ca6e2d875cb",
+  "prompts": {
+    "876c49f5068ad554": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "78d4c89c-1cda-4e73-acd0-25960a901e41",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 163,
+      "total_deletions": 47,
+      "accepted_lines": 136,
+      "overriden_lines": 0
+    }
+  }
+}
