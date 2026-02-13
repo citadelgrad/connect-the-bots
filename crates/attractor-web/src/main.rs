@@ -5,9 +5,8 @@ async fn main() {
     use leptos::config::get_configuration;
     use leptos_axum::{generate_route_list, LeptosRoutes};
     use attractor_web::App;
-    use attractor_web::server::documents::DocumentWatcher;
-    use std::path::PathBuf;
-    use std::sync::Arc;
+    use std::sync::{Arc, Mutex};
+    use std::collections::HashMap;
 
     tracing_subscriber::fmt::init();
 
@@ -16,18 +15,16 @@ async fn main() {
     let leptos_options = conf.leptos_options;
     let routes = generate_route_list(App);
 
-    // Initialize file watcher for .attractor/ directory
-    let attractor_dir = PathBuf::from(".attractor");
-    let doc_watcher = Arc::new(
-        DocumentWatcher::new(attractor_dir.clone())
-            .expect("Failed to start document file watcher"),
-    );
+    // Initialize SQLite database
+    let db = attractor_web::server::db::init_db()
+        .await
+        .expect("Failed to initialize database");
 
     let terminal_sessions = attractor_web::server::terminal::TerminalSessions::default();
 
     let app_state = attractor_web::server::AppState {
-        doc_watcher: doc_watcher.clone(),
-        attractor_dir,
+        db: db.clone(),
+        watchers: Arc::new(Mutex::new(HashMap::new())),
         terminal_sessions,
     };
 
@@ -52,7 +49,12 @@ async fn main() {
         .leptos_routes_with_context(
             &leptos_options,
             routes,
-            move || {},
+            {
+                let pool = db.clone();
+                move || {
+                    leptos::prelude::provide_context(pool.clone());
+                }
+            },
             {
                 let leptos_options = leptos_options.clone();
                 move || shell(leptos_options.clone())
