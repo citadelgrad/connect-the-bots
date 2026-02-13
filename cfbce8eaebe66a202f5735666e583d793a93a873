@@ -1,0 +1,38 @@
+crates/attractor-web/src/server/db.rs
+  dc4be21d5527342c 1-214
+crates/attractor-web/src/server/mod.rs
+  dc4be21d5527342c 5-6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.3",
+  "base_commit_sha": "cfbce8eaebe66a202f5735666e583d793a93a873",
+  "prompts": {
+    "6f41c7bf83ed396d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ffe97a67-b23b-4c15-8c23-e7983ce5cb58",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    },
+    "dc4be21d5527342c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2bd69107-2f52-4df3-a1db-21dec209e624",
+        "model": "unknown"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 216,
+      "total_deletions": 0,
+      "accepted_lines": 216,
+      "overriden_lines": 0
+    }
+  }
+}
