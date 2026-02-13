@@ -72,7 +72,7 @@ where
                 use futures::StreamExt as _;
 
                 let url = format!("/api/documents/stream?project_id={}", project_id);
-                match gloo_net::eventsource::futures::EventSource::new(url) {
+                match gloo_net::eventsource::futures::EventSource::new(&url) {
                     Ok(mut es) => {
                         let mut stream = es.subscribe("document_update").unwrap();
 

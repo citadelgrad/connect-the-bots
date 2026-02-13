@@ -14,13 +14,14 @@ pub fn Terminal(
     #[prop(into)] folder: String,
     #[prop(into)] container_id: String,
 ) -> impl IntoView {
-    // Clone for use in multiple closures
-    let container_id_clone = container_id.clone();
-    let folder_clone = folder.clone();
+    // folder is used only in the hydrate feature (client-side JS init)
+    let _folder = folder;
 
     // Initialize xterm.js after the element is mounted
     #[cfg(feature = "hydrate")]
     {
+        let container_id_clone = container_id.clone();
+        let folder_clone = _folder;
         Effect::new(move || {
             use wasm_bindgen::prelude::*;
 
@@ -46,13 +47,14 @@ pub fn Terminal(
             cb.forget();
 
             // Cleanup: dispose terminal when component unmounts
+            let container_id_cleanup = container_id_clone.clone();
             on_cleanup(move || {
                 let window = web_sys::window().unwrap();
                 if let Ok(func) = js_sys::Reflect::get(&window, &JsValue::from_str("disposeTerminal"))
                 {
                     if func.is_function() {
                         let func: js_sys::Function = func.into();
-                        let _ = func.call1(&JsValue::NULL, &JsValue::from_str(&container_id_clone));
+                        let _ = func.call1(&JsValue::NULL, &JsValue::from_str(&container_id_cleanup));
                     }
                 }
             });
