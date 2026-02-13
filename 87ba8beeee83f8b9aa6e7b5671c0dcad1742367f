@@ -1,0 +1,23 @@
+crates/attractor-cli/src/main.rs
+  6205139dd8ab9868 441-443,475-478,483,485,507-508
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.3",
+  "base_commit_sha": "87ba8beeee83f8b9aa6e7b5671c0dcad1742367f",
+  "prompts": {
+    "6205139dd8ab9868": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "edbb60f9-09df-4560-88c8-a94751220b1a",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 35,
+      "total_deletions": 60,
+      "accepted_lines": 31,
+      "overriden_lines": 0
+    }
+  }
+}
