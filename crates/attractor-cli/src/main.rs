@@ -80,8 +80,12 @@ enum Commands {
         spec_path: PathBuf,
 
         /// Print the generated shell commands without executing them
-        #[arg(long)]
+        #[arg(long, conflicts_with = "validate")]
         dry_run: bool,
+
+        /// Validate existing tickets against spec (skip LLM, just check coverage)
+        #[arg(long, conflicts_with = "dry_run")]
+        validate: Option<String>,
     },
 
     /// Scaffold a pipeline from a beads epic
@@ -125,8 +129,13 @@ async fn main() -> anyhow::Result<()> {
         Commands::Plan { prd, spec, from_prompt, output } => {
             cmd_plan(prd, spec, from_prompt.as_deref(), output.as_deref()).await?;
         }
-        Commands::Decompose { spec_path, dry_run } => {
-            cmd_decompose(&spec_path, dry_run).await?;
+        Commands::Decompose { spec_path, dry_run, validate } => {
+            if let Some(epic_id) = validate {
+                let spec_content = std::fs::read_to_string(&spec_path)?;
+                validate_decomposition(&spec_content, Some(&epic_id)).await?;
+            } else {
+                cmd_decompose(&spec_path, dry_run).await?;
+            }
         }
         Commands::Scaffold { epic_id, output } => {
             cmd_scaffold(&epic_id, output.as_deref()).await?;
@@ -496,8 +505,12 @@ async fn cmd_decompose(spec_path: &std::path::Path, dry_run: bool) -> anyhow::Re
         .arg(&prompt)
         .arg("--output-format")
         .arg("json")
-        .arg("--dangerously-skip-permissions")
         .arg("--no-session-persistence");
+
+    // Only grant tool permissions when actually executing (not dry-run)
+    if !dry_run {
+        cmd.arg("--dangerously-skip-permissions");
+    }
 
     // Capture output
     cmd.stdout(std::process::Stdio::piped());
@@ -534,6 +547,7 @@ async fn cmd_decompose(spec_path: &std::path::Path, dry_run: bool) -> anyhow::Re
     if dry_run {
         println!("Generated shell commands (dry run):\n");
         println!("{}", full_script);
+        validate_decomposition(&spec_content, None).await?;
         return Ok(());
     }
 
@@ -586,7 +600,7 @@ async fn cmd_decompose(spec_path: &std::path::Path, dry_run: bool) -> anyhow::Re
     println!("  Dependencies: {}", dep_count);
 
     // Run post-decompose validation
-    validate_decomposition(&spec_content, epic_id).await?;
+    validate_decomposition(&spec_content, Some(epic_id)).await?;
 
     println!("\nNext steps:");
     println!("1. Review tasks: bd list");
@@ -595,13 +609,104 @@ async fn cmd_decompose(spec_path: &std::path::Path, dry_run: bool) -> anyhow::Re
     Ok(())
 }
 
+/// Validate decomposition results. When `epic_id` is Some, fetches tickets and
+/// checks field completeness + spec coverage. When None (dry-run), just reports
+/// the identifiers extracted from the spec that will be tracked.
 async fn validate_decomposition(
     spec_content: &str,
-    epic_id: &str,
+    epic_id: Option<&str>,
 ) -> anyhow::Result<()> {
     use std::collections::HashSet;
 
-    // Step A: Fetch all child tickets
+    // Extract key identifiers from spec
+    // Only test names (not general fn names — those are too noisy from code examples)
+    let re_test = regex::Regex::new(r"(test_\w+)").unwrap();
+    let re_path = regex::Regex::new(r"(?:src|tests)/[\w/]+\.(?:rs|ndjson)").unwrap();
+    let re_qualified = regex::Regex::new(r"([A-Z]\w+::\w+)").unwrap();
+    let re_header = regex::Regex::new(r"####\s+`([^`]+)`").unwrap();
+
+    // Common stdlib/language types whose ::method calls are noise, not spec identifiers
+    let stdlib_prefixes: HashSet<&str> = [
+        "Arc", "Box", "Cell", "Cow", "HashMap", "HashSet", "Mutex", "Option",
+        "PathBuf", "Rc", "RefCell", "Result", "RwLock", "String", "Vec",
+        "AtomicBool", "AtomicU32", "AtomicU64", "AtomicUsize", "Ordering",
+        "BufReader", "BufWriter", "Duration", "Instant", "SystemTime",
+        "Command", "Path", "File", "Sender", "Receiver",
+        "JoinHandle", "TcpStream", "TcpListener",
+        "Bytes", "BytesMut", "Pin", "Waker",
+        "Some", "None", "Ok", "Err", "Default", "Display", "Debug",
+        "From", "Into", "TryFrom", "TryInto", "Iterator", "IntoIterator",
+        "Read", "Write", "Seek", "BufRead", "AsRef", "Deref",
+        "Serialize", "Deserialize", "Clone", "Copy", "Send", "Sync",
+        "PhantomData", "ManuallyDrop", "MaybeUninit",
+        // std::io and error types
+        "Error", "ErrorKind", "IoError",
+        // tokio types
+        "Mutex", "RwLock", "Notify", "Semaphore", "Barrier",
+        "OwnedSemaphorePermit", "JoinSet", "JoinError",
+        // serde/common crate types
+        "Value", "Map", "Number", "Formatter",
+        // test assertion types
+        "Assert", "Assertion",
+    ].into_iter().collect();
+
+    // Generic trait method suffixes that aren't meaningful on any type
+    let noise_suffixes = ["::clone", "::into",
+        "::unwrap", "::expect", "::is_ok", "::is_err", "::is_some", "::is_none",
+        "::as_ref", "::as_str", "::as_bytes", "::as_slice",
+        "::to_string", "::to_owned", "::to_vec",
+    ];
+
+    let mut identifiers = HashSet::new();
+
+    for cap in re_test.captures_iter(spec_content) {
+        identifiers.insert(cap[1].to_string());
+    }
+    for mat in re_path.find_iter(spec_content) {
+        identifiers.insert(mat.as_str().to_string());
+    }
+    for cap in re_qualified.captures_iter(spec_content) {
+        let full = &cap[1];
+        // Extract the type prefix (before ::)
+        let prefix = full.split("::").next().unwrap_or("");
+        if stdlib_prefixes.contains(prefix) {
+            continue;
+        }
+        if noise_suffixes.iter().any(|s| full.ends_with(s)) {
+            continue;
+        }
+        identifiers.insert(full.to_string());
+    }
+    for cap in re_header.captures_iter(spec_content) {
+        identifiers.insert(cap[1].to_string());
+    }
+
+    let total = identifiers.len();
+
+    // Dry-run mode: just report what we extracted from the spec
+    let epic_id = match epic_id {
+        Some(id) => id,
+        None => {
+            println!("\nSpec validation (dry run):");
+            if total > 0 {
+                println!("  Extracted {} identifiers to track coverage against tickets", total);
+                let mut sorted: Vec<&str> = identifiers.iter().map(|s| s.as_str()).collect();
+                sorted.sort();
+                let display: Vec<&str> = sorted.iter().take(20).copied().collect();
+                let suffix = if sorted.len() > 20 {
+                    format!(", ... ({} more)", sorted.len() - 20)
+                } else {
+                    String::new()
+                };
+                println!("  Identifiers: {}{}", display.join(", "), suffix);
+            } else {
+                println!("  No identifiers extracted from spec (no function names, file paths, or types found)");
+            }
+            return Ok(());
+        }
+    };
+
+    // Fetch all child tickets
     let list_output = tokio::process::Command::new("bd")
         .args(["list", "--parent", epic_id, "--json", "--limit", "0"])
         .stdout(std::process::Stdio::piped())
@@ -629,7 +734,7 @@ async fn validate_decomposition(
         return Ok(());
     }
 
-    // Step B: Field completeness check
+    // Field completeness check
     let check_fields = ["description", "acceptance_criteria", "design"];
     let mut incomplete: Vec<(String, String, Vec<&str>)> = Vec::new();
     let mut complete_count = 0;
@@ -654,29 +759,7 @@ async fn validate_decomposition(
         }
     }
 
-    // Step C: Extract key identifiers from spec
-    let re_fn = regex::Regex::new(r"(?:test_|fn\s+)(\w+)").unwrap();
-    let re_path = regex::Regex::new(r"(?:src|tests)/[\w/]+\.(?:rs|ndjson)").unwrap();
-    let re_qualified = regex::Regex::new(r"([A-Z]\w+::\w+)").unwrap();
-    let re_header = regex::Regex::new(r"####\s+`([^`]+)`").unwrap();
-
-    let mut identifiers = HashSet::new();
-
-    for cap in re_fn.captures_iter(spec_content) {
-        identifiers.insert(cap[1].to_string());
-    }
-    for mat in re_path.find_iter(spec_content) {
-        identifiers.insert(mat.as_str().to_string());
-    }
-    for cap in re_qualified.captures_iter(spec_content) {
-        identifiers.insert(cap[1].to_string());
-    }
-    for cap in re_header.captures_iter(spec_content) {
-        identifiers.insert(cap[1].to_string());
-    }
-
-    // Step D: Check coverage
-    // Build combined text per ticket
+    // Check coverage against tickets
     let ticket_texts: Vec<String> = tickets
         .iter()
         .map(|t| {
@@ -703,14 +786,13 @@ async fn validate_decomposition(
     }
 
     missing_ids.sort();
-    let total = identifiers.len();
     let pct = if total > 0 {
         (covered as f64 / total as f64 * 100.0) as u32
     } else {
         100
     };
 
-    // Step E: Print report
+    // Print report
     println!("\nValidation:");
     println!(
         "  Tickets: {} ({} tasks + 1 epic)",

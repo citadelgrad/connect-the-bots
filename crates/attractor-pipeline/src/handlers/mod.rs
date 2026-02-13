@@ -244,6 +244,40 @@ impl NodeHandler for CodergenHandler {
 
         tracing::info!(node = %node.id, label = %label, "Executing codergen handler via Claude Code");
 
+        // Check if dry_run is set in context
+        let dry_run = context
+            .get("dry_run")
+            .await
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+
+        if dry_run {
+            tracing::info!(node = %node.id, "Dry run — skipping Claude CLI execution");
+            return Ok(Outcome {
+                status: StageStatus::Success,
+                preferred_label: None,
+                suggested_next_ids: vec![],
+                context_updates: {
+                    let mut m = HashMap::new();
+                    m.insert(
+                        format!("{}.result", node.id),
+                        serde_json::Value::String(format!("Dry run — prompt not sent: {}", prompt)),
+                    );
+                    m.insert(
+                        format!("{}.completed", node.id),
+                        serde_json::Value::Bool(true),
+                    );
+                    m.insert(
+                        format!("{}.dry_run", node.id),
+                        serde_json::Value::Bool(true),
+                    );
+                    m
+                },
+                notes: format!("Dry run — Claude CLI not invoked for: {}", label),
+                failure_reason: None,
+            });
+        }
+
         // Build the full prompt with pipeline context
         let goal = &graph.goal;
         let mut full_prompt = String::new();
