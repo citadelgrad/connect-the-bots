@@ -6,7 +6,7 @@ use leptos_router::{
 };
 
 use crate::components::layout::ProjectView;
-use crate::server::projects::{list_open_projects, Project};
+use crate::server::projects::list_open_projects;
 
 #[component]
 fn HomePage() -> impl IntoView {
