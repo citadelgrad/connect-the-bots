@@ -24,7 +24,19 @@ pub struct DocumentWatcher {
 
 impl DocumentWatcher {
     /// Start watching the `.attractor/` directory for PRD/Spec changes.
-    pub fn new(watch_dir: PathBuf) -> Result<Self, notify::Error> {
+    ///
+    /// File updates are broadcast via the channel for SSE streaming, and also
+    /// persisted to SQLite via the provided database pool.
+    ///
+    /// # Arguments
+    /// - `watch_dir`: Path to the .attractor directory to watch
+    /// - `db`: SQLite connection pool for persisting document changes
+    /// - `project_id`: Database ID of the project being watched
+    pub fn new(
+        watch_dir: PathBuf,
+        db: sqlx::SqlitePool,
+        project_id: i64,
+    ) -> Result<Self, notify::Error> {
         use notify::{Event as NotifyEvent, RecursiveMode, Watcher};
 
         let (sender, _) = broadcast::channel::<DocumentUpdate>(16);
@@ -56,10 +68,35 @@ impl DocumentWatcher {
                             content.as_ref().map_or(0, |c| c.len())
                         );
 
+                        // Broadcast via channel for live SSE updates
                         let _ = tx.send(DocumentUpdate {
                             doc_type: doc_type.to_string(),
-                            content,
+                            content: content.clone(),
                         });
+
+                        // Persist to SQLite asynchronously
+                        if let Some(content_str) = content {
+                            let db_pool = db.clone();
+                            let doc_type_str = doc_type.to_string();
+                            let project_id_copy = project_id;
+
+                            tokio::runtime::Handle::current().spawn(async move {
+                                if let Err(e) = crate::server::db::upsert_document(
+                                    &db_pool,
+                                    project_id_copy,
+                                    &doc_type_str,
+                                    &content_str,
+                                )
+                                .await
+                                {
+                                    tracing::error!(
+                                        "Failed to persist document {} to DB: {}",
+                                        doc_type_str,
+                                        e
+                                    );
+                                }
+                            });
+                        }
                     }
                 }
             })?;
@@ -68,7 +105,7 @@ impl DocumentWatcher {
         std::fs::create_dir_all(&watch_dir).ok();
 
         watcher.watch(&watch_dir, RecursiveMode::NonRecursive)?;
-        tracing::info!("Watching {:?} for document changes", watch_dir);
+        tracing::info!("Watching {:?} for document changes (project_id: {})", watch_dir, project_id);
 
         Ok(DocumentWatcher {
             sender,
