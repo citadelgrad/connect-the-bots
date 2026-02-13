@@ -1,0 +1,25 @@
+crates/attractor-web/src/components/mod.rs
+  d9f869c8b39744ac 7,10
+crates/attractor-web/src/components/project_sidebar.rs
+  d9f869c8b39744ac 1-139
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.3",
+  "base_commit_sha": "6096bacb3ec113615feafba0f66e8889911bb5cc",
+  "prompts": {
+    "d9f869c8b39744ac": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2077c4b3-333a-4627-91df-55a38c7a5644",
+        "model": "unknown"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 141,
+      "total_deletions": 0,
+      "accepted_lines": 141,
+      "overriden_lines": 0
+    }
+  }
+}
