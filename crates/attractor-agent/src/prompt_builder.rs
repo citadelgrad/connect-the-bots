@@ -135,6 +135,7 @@ pub struct ProjectDoc {
 /// Looks for README.md, CLAUDE.md, .cursorrules, etc.
 pub async fn discover_project_docs(project_root: &Path) -> Vec<ProjectDoc> {
     let candidates = [
+        ".attractor/CLAUDE.md",
         "CLAUDE.md",
         "README.md",
         ".cursorrules",

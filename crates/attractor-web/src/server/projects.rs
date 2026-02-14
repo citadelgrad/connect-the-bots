@@ -40,6 +40,121 @@ pub struct DirEntry {
     pub is_dir: bool,
 }
 
+/// Ensure `.attractor/CLAUDE.md` exists in the project directory.
+///
+/// This file tells Claude Code about the PRD/SPEC document system so that when
+/// a terminal session starts, Claude knows to write PRD and SPEC files to the
+/// correct locations (`.attractor/prd.md` and `.attractor/spec.md`).
+///
+/// The file is only created if it doesn't already exist — user edits are preserved.
+#[cfg(feature = "ssr")]
+fn scaffold_attractor_config(project_dir: &Path) {
+    use std::fs;
+
+    let attractor_dir = project_dir.join(".attractor");
+    let claude_md_path = attractor_dir.join("CLAUDE.md");
+
+    // Don't overwrite if the user has already customized it
+    if claude_md_path.exists() {
+        return;
+    }
+
+    // Ensure .attractor/ exists
+    if let Err(e) = fs::create_dir_all(&attractor_dir) {
+        tracing::warn!("Failed to create .attractor directory: {}", e);
+        return;
+    }
+
+    // Load templates if they exist in the attractor installation
+    let prd_template = load_bundled_template("prd-template.md");
+    let spec_template = load_bundled_template("spec-template.md");
+
+    let mut content = String::from(ATTRACTOR_CLAUDE_MD_HEADER);
+
+    if let Some(prd) = prd_template {
+        content.push_str("\n\n## PRD Template\n\n");
+        content.push_str("Use this structure when creating a PRD:\n\n");
+        content.push_str("````markdown\n");
+        content.push_str(&prd);
+        content.push_str("\n````\n");
+    }
+
+    if let Some(spec) = spec_template {
+        content.push_str("\n\n## Technical Spec Template\n\n");
+        content.push_str("Use this structure when creating a technical spec:\n\n");
+        content.push_str("````markdown\n");
+        content.push_str(&spec);
+        content.push_str("\n````\n");
+    }
+
+    match fs::write(&claude_md_path, content) {
+        Ok(()) => tracing::info!("Created {}", claude_md_path.display()),
+        Err(e) => tracing::warn!("Failed to write {}: {}", claude_md_path.display(), e),
+    }
+}
+
+/// Try to load a template from the bundled templates directory.
+///
+/// Looks for templates relative to the attractor binary, then falls back to
+/// common install locations.
+#[cfg(feature = "ssr")]
+fn load_bundled_template(filename: &str) -> Option<String> {
+    use std::fs;
+
+    // Try relative to the current executable
+    if let Ok(exe_path) = std::env::current_exe() {
+        if let Some(exe_dir) = exe_path.parent() {
+            // Check sibling templates/ directory (development layout)
+            let candidates = [
+                exe_dir.join("templates").join(filename),
+                exe_dir.join("../templates").join(filename),
+                exe_dir.join("../../templates").join(filename),
+            ];
+            for candidate in &candidates {
+                if let Ok(content) = fs::read_to_string(candidate) {
+                    return Some(content);
+                }
+            }
+        }
+    }
+
+    // Try from current working directory (common during development)
+    if let Ok(cwd) = std::env::current_dir() {
+        let cwd_template = cwd.join("templates").join(filename);
+        if let Ok(content) = fs::read_to_string(cwd_template) {
+            return Some(content);
+        }
+    }
+
+    None
+}
+
+#[cfg(feature = "ssr")]
+const ATTRACTOR_CLAUDE_MD_HEADER: &str = r#"# Attractor Project Configuration
+
+## Document System (PRD & Technical Spec)
+
+This project uses the **Attractor** document system. When asked to create planning
+documents, you MUST write them to the correct file paths so the web UI can display
+them in real time.
+
+### File Locations
+
+| Document | File Path | Description |
+|----------|-----------|-------------|
+| **PRD** | `.attractor/prd.md` | Product Requirements Document |
+| **Technical Spec** | `.attractor/spec.md` | Technical Specification |
+
+### Rules
+
+1. **Always write PRDs to `.attractor/prd.md`** — the web UI watches this exact path
+2. **Always write specs to `.attractor/spec.md`** — the web UI watches this exact path
+3. Do NOT create PRD/spec files in `docs/` or any other location
+4. Overwrite the file each time (the web UI tracks versions via the database)
+5. Follow the templates below for document structure
+6. When creating both documents, write the PRD first, then the spec
+"#;
+
 // Server function implementations (Leptos #[server] macro generates client stubs automatically)
 mod ssr_impl {
     use super::*;
@@ -91,6 +206,9 @@ mod ssr_impl {
             .to_str()
             .ok_or_else(|| ServerFnError::new("Path contains invalid UTF-8"))?
             .to_string();
+
+        // Ensure .attractor/CLAUDE.md exists with PRD/SPEC instructions
+        scaffold_attractor_config(&canonical_path);
 
         // Upsert into database
         db::upsert_project(&pool, &canonical_str)
