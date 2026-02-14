@@ -21,7 +21,7 @@ pub fn ProjectSidebar(
 
     // Handle adding a new project
     let handle_project_selected = move |project: Project| {
-        let mut current = projects.get();
+        let mut current = projects.get_untracked();
         if !current.iter().any(|p| p.id == project.id) {
             current.push(project.clone());
             projects.set(current);
@@ -39,13 +39,13 @@ pub fn ProjectSidebar(
                 let _ = close_project(project_id).await;
 
                 // Remove from local list
-                let mut current = projects.get();
+                let mut current = projects.get_untracked();
                 current.retain(|p| p.id != project_id);
                 projects.set(current);
 
                 // Update active project if needed
-                if active_project_id.get() == Some(project_id) {
-                    let projects_list = projects.get();
+                if active_project_id.get_untracked() == Some(project_id) {
+                    let projects_list = projects.get_untracked();
                     active_project_id.set(projects_list.first().map(|p| p.id));
                 }
             }

@@ -43,7 +43,11 @@ pub fn Terminal(
                     }
                 }
             });
-            let _ = window.request_animation_frame(cb.as_ref().unchecked_ref());
+            // Use setTimeout instead of rAF to ensure Leptos has flushed DOM updates after hydration
+            let _ = window.set_timeout_with_callback_and_timeout_and_arguments_0(
+                cb.as_ref().unchecked_ref(),
+                50,
+            );
             cb.forget();
 
             // Cleanup: dispose terminal when component unmounts
