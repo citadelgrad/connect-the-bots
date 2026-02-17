@@ -1,0 +1,38 @@
+README.md
+  f7a13d4f41adae9c 7-10
+docs/pipeline-overview.svg
+  f7a13d4f41adae9c 1-148
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.3",
+  "base_commit_sha": "00c391febf09a4a663ed081f23d1277b5ad1b51e",
+  "prompts": {
+    "876c49f5068ad554": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "78d4c89c-1cda-4e73-acd0-25960a901e41",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 179,
+      "overriden_lines": 0
+    },
+    "f7a13d4f41adae9c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e1563770-9d47-4644-96e1-b77ad45f5632",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 152,
+      "total_deletions": 0,
+      "accepted_lines": 152,
+      "overriden_lines": 0
+    }
+  }
+}
