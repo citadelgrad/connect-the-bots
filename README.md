@@ -130,6 +130,7 @@ attractor run templates/plan-to-execute.dot -w .
 ## Documentation
 
 - **[docs/cli-reference.md](docs/cli-reference.md)** — CLI commands, flags, examples, and environment setup
+- **[docs/task-verification.md](docs/task-verification.md)** — How pipeline nodes are verified: handler dispatch, outcome schemas, goal gates, edge routing, and budget guards
 - **[docs/guide.md](docs/guide.md)** — Full user guide covering:
 
 - DOT file syntax and all node/edge attributes
