@@ -8,6 +8,23 @@ These loops don't just handle failure — they create iterative refinement. A pi
   <img src="docs/pipeline-overview.svg" alt="How Attractor Works" width="800"/>
 </p>
 
+### How verification works
+
+Attractor doesn't just run tasks — it verifies them. Six layers of checks ensure that every pipeline node actually did what it was supposed to do, from static analysis before any LLM call to runtime proof-of-work at the exit gate.
+
+<p align="center">
+  <img src="docs/verification-deep-dive.svg" alt="Verification Deep Dive" width="800"/>
+</p>
+
+1. **Static Validation** — 12 lint rules check pipeline structure before any LLM call. Missing start nodes, unreachable steps, and malformed conditions are caught immediately.
+2. **Handler Dispatch** — The engine resolves each node's handler type (codergen, conditional, tool, etc.) and aborts if the handler isn't registered.
+3. **Outcome Schema** — Rust's type system enforces the response contract at compile time. Every handler must return a status, context updates, and notes — malformed results are structurally impossible.
+4. **Edge Routing** — A 5-step cascade selects the next edge: condition match → preferred label → suggested ID → weight → lexical tiebreak. This enables patterns like "pass → deploy, partial → extended tests, fail → fixup loop."
+5. **Goal Gates** — The "proof of work" layer. Nodes marked `goal_gate=true` are audited at exit. If any gate is unsatisfied, the engine resolves a retry target (node → fallback → graph-level) and loops back. No target found means pipeline abort.
+6. **Budget & Step Guards** — `max_steps`, `max_budget_usd`, and `max_retries` are enforced continuously. Runaway loops are impossible.
+
+For the full specification including code references and examples, see **[docs/task-verification.md](docs/task-verification.md)**.
+
 ## Overview
 
 Attractor lets you describe AI workflows as directed graphs using DOT syntax. Each node is a step (LLM call, tool use, human gate, parallel fan-out) and edges define the flow with optional conditions. The engine handles execution, edge selection, retries, goal enforcement, and cost tracking.

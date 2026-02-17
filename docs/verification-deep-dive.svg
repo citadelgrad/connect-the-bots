@@ -1,0 +1,218 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 820" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-green" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#16a34a"/>
+    </marker>
+    <marker id="arrow-red" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#dc2626"/>
+    </marker>
+    <marker id="arrow-amber" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrow-blue" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <filter id="shadow" x="-4%" y="-4%" width="108%" height="108%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.1"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="820" rx="12" fill="#0f172a"/>
+
+  <!-- Title -->
+  <text x="450" y="38" text-anchor="middle" fill="#f1f5f9" font-size="20" font-weight="700">Verification Deep Dive</text>
+  <text x="450" y="58" text-anchor="middle" fill="#94a3b8" font-size="13">Six layers of verification — from static analysis to runtime proof-of-work</text>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- LEFT COLUMN: The Verification Stack            -->
+  <!-- ═══════════════════════════════════════════════ -->
+
+  <!-- Layer numbers column label -->
+  <text x="40" y="90" fill="#475569" font-size="11" font-weight="600">LAYER</text>
+
+  <!-- Main flow column label -->
+  <text x="310" y="90" text-anchor="middle" fill="#94a3b8" font-size="11" font-weight="600">VERIFICATION FLOW</text>
+
+  <!-- Right column label -->
+  <text x="720" y="90" text-anchor="middle" fill="#94a3b8" font-size="11" font-weight="600">ON FAILURE</text>
+
+  <!-- ─────────────────────────────────────────────── -->
+  <!-- LAYER 1: Static Validation (Pre-Execution)      -->
+  <!-- ─────────────────────────────────────────────── -->
+  <circle cx="40" cy="138" r="18" fill="#312e81"/>
+  <text x="40" y="143" text-anchor="middle" fill="#c4b5fd" font-size="16" font-weight="700">1</text>
+
+  <rect x="75" y="105" width="520" height="68" rx="8" fill="#312e81" stroke="#6366f1" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="90" y="128" fill="#c4b5fd" font-size="10" font-weight="600">PRE-EXECUTION</text>
+  <text x="90" y="148" fill="#e0e7ff" font-size="14" font-weight="600">Static Validation — 12 Lint Rules</text>
+  <text x="90" y="165" fill="#a5b4fc" font-size="11">Start/exit nodes exist? All nodes reachable? Edge targets valid? Conditions parse?</text>
+
+  <!-- Failure box -->
+  <rect x="630" y="115" width="240" height="48" rx="6" fill="#450a0a" stroke="#dc2626" stroke-width="1"/>
+  <text x="750" y="137" text-anchor="middle" fill="#fca5a5" font-size="11" font-weight="500">ValidationError</text>
+  <text x="750" y="153" text-anchor="middle" fill="#f87171" font-size="10">Abort — no LLM calls made</text>
+  <line x1="599" y1="139" x2="626" y2="139" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+
+  <!-- Arrow down -->
+  <line x1="335" y1="177" x2="335" y2="197" stroke="#16a34a" stroke-width="2" marker-end="url(#arrow-green)"/>
+  <text x="350" y="192" fill="#4ade80" font-size="9">pass</text>
+
+  <!-- ─────────────────────────────────────────────── -->
+  <!-- LAYER 2: Handler Dispatch                       -->
+  <!-- ─────────────────────────────────────────────── -->
+  <circle cx="40" cy="238" r="18" fill="#164e63"/>
+  <text x="40" y="243" text-anchor="middle" fill="#67e8f9" font-size="16" font-weight="700">2</text>
+
+  <rect x="75" y="205" width="520" height="68" rx="8" fill="#164e63" stroke="#0ea5e9" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="90" y="228" fill="#67e8f9" font-size="10" font-weight="600">EXECUTION HANDSHAKE</text>
+  <text x="90" y="248" fill="#e0f2fe" font-size="14" font-weight="600">Handler Dispatch</text>
+  <text x="90" y="265" fill="#7dd3fc" font-size="11">Resolve handler type (codergen, start, exit, conditional) from HandlerRegistry</text>
+
+  <!-- Failure box -->
+  <rect x="630" y="215" width="240" height="48" rx="6" fill="#450a0a" stroke="#dc2626" stroke-width="1"/>
+  <text x="750" y="237" text-anchor="middle" fill="#fca5a5" font-size="11" font-weight="500">HandlerError</text>
+  <text x="750" y="253" text-anchor="middle" fill="#f87171" font-size="10">No handler registered — task aborts</text>
+  <line x1="599" y1="239" x2="626" y2="239" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+
+  <!-- Arrow down -->
+  <line x1="335" y1="277" x2="335" y2="297" stroke="#16a34a" stroke-width="2" marker-end="url(#arrow-green)"/>
+  <text x="350" y="292" fill="#4ade80" font-size="9">found</text>
+
+  <!-- ─────────────────────────────────────────────── -->
+  <!-- LAYER 3: Outcome Schema                         -->
+  <!-- ─────────────────────────────────────────────── -->
+  <circle cx="40" cy="338" r="18" fill="#422006"/>
+  <text x="40" y="343" text-anchor="middle" fill="#fcd34d" font-size="16" font-weight="700">3</text>
+
+  <rect x="75" y="305" width="520" height="68" rx="8" fill="#422006" stroke="#f59e0b" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="90" y="328" fill="#fcd34d" font-size="10" font-weight="600">COMPILE-TIME CONTRACT</text>
+  <text x="90" y="348" fill="#fef3c7" font-size="14" font-weight="600">Outcome Schema</text>
+  <text x="90" y="365" fill="#fde68a" font-size="11">Rust types enforce: status, preferred_label, context_updates, notes, failure_reason</text>
+
+  <!-- Compile-time badge -->
+  <rect x="630" y="315" width="240" height="48" rx="6" fill="#14532d" stroke="#16a34a" stroke-width="1"/>
+  <text x="750" y="337" text-anchor="middle" fill="#86efac" font-size="11" font-weight="500">Compile-Time Guarantee</text>
+  <text x="750" y="353" text-anchor="middle" fill="#4ade80" font-size="10">Malformed results impossible</text>
+  <line x1="599" y1="339" x2="626" y2="339" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+
+  <!-- Arrow down -->
+  <line x1="335" y1="377" x2="335" y2="397" stroke="#16a34a" stroke-width="2" marker-end="url(#arrow-green)"/>
+  <text x="350" y="392" fill="#4ade80" font-size="9">valid</text>
+
+  <!-- ─────────────────────────────────────────────── -->
+  <!-- LAYER 4: Edge Routing                           -->
+  <!-- ─────────────────────────────────────────────── -->
+  <circle cx="40" cy="440" r="18" fill="#1a2332"/>
+  <text x="40" y="445" text-anchor="middle" fill="#e2e8f0" font-size="16" font-weight="700">4</text>
+
+  <rect x="75" y="405" width="520" height="92" rx="8" fill="#1a2332" stroke="#475569" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="90" y="428" fill="#94a3b8" font-size="10" font-weight="600">MULTI-PATH ROUTING</text>
+  <text x="90" y="448" fill="#e2e8f0" font-size="14" font-weight="600">Edge Selection — 5-Step Cascade</text>
+
+  <!-- Cascade steps -->
+  <rect x="90" y="458" width="105" height="22" rx="4" fill="#312e81" stroke="#6366f1" stroke-width="0.5"/>
+  <text x="142" y="473" text-anchor="middle" fill="#c4b5fd" font-size="9">1. condition match</text>
+
+  <rect x="200" y="458" width="105" height="22" rx="4" fill="#312e81" stroke="#6366f1" stroke-width="0.5"/>
+  <text x="252" y="473" text-anchor="middle" fill="#c4b5fd" font-size="9">2. preferred_label</text>
+
+  <rect x="310" y="458" width="100" height="22" rx="4" fill="#312e81" stroke="#6366f1" stroke-width="0.5"/>
+  <text x="360" y="473" text-anchor="middle" fill="#c4b5fd" font-size="9">3. suggested_id</text>
+
+  <rect x="415" y="458" width="80" height="22" rx="4" fill="#312e81" stroke="#6366f1" stroke-width="0.5"/>
+  <text x="455" y="473" text-anchor="middle" fill="#c4b5fd" font-size="9">4. weight</text>
+
+  <rect x="500" y="458" width="80" height="22" rx="4" fill="#312e81" stroke="#6366f1" stroke-width="0.5"/>
+  <text x="540" y="473" text-anchor="middle" fill="#c4b5fd" font-size="9">5. tiebreak</text>
+
+  <!-- Routing result -->
+  <rect x="630" y="415" width="240" height="72" rx="6" fill="#1a2332" stroke="#475569" stroke-width="1"/>
+  <text x="750" y="437" text-anchor="middle" fill="#e2e8f0" font-size="11" font-weight="500">Routes to one of:</text>
+  <text x="750" y="456" text-anchor="middle" fill="#4ade80" font-size="10">success → next step</text>
+  <text x="750" y="471" text-anchor="middle" fill="#f87171" font-size="10">fail → fixup loop</text>
+  <text x="750" y="486" text-anchor="middle" fill="#fcd34d" font-size="10">partial → extended checks</text>
+  <line x1="599" y1="451" x2="626" y2="451" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Arrow down -->
+  <line x1="335" y1="501" x2="335" y2="521" stroke="#16a34a" stroke-width="2" marker-end="url(#arrow-green)"/>
+  <text x="350" y="516" fill="#4ade80" font-size="9">routed</text>
+
+  <!-- ─────────────────────────────────────────────── -->
+  <!-- LAYER 5: Goal Gates (the big one)               -->
+  <!-- ─────────────────────────────────────────────── -->
+  <circle cx="40" cy="575" r="18" fill="#14532d"/>
+  <text x="40" y="580" text-anchor="middle" fill="#86efac" font-size="16" font-weight="700">5</text>
+
+  <rect x="75" y="530" width="520" height="120" rx="8" fill="#14532d" stroke="#16a34a" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="90" y="553" fill="#86efac" font-size="10" font-weight="600">PROOF OF WORK — Checked at Exit</text>
+  <text x="90" y="573" fill="#dcfce7" font-size="14" font-weight="600">Goal Gates — Did the Change Actually Happen?</text>
+  <text x="90" y="593" fill="#4ade80" font-size="11">At exit node: engine audits ALL goal_gate=true nodes for Success status</text>
+
+  <!-- Retry resolution cascade -->
+  <text x="90" y="615" fill="#86efac" font-size="10" font-weight="500">Retry target resolution:</text>
+  <rect x="90" y="622" width="95" height="18" rx="3" fill="#166534" stroke="#22c55e" stroke-width="0.5"/>
+  <text x="137" y="635" text-anchor="middle" fill="#bbf7d0" font-size="8">node retry_target</text>
+  <text x="192" y="635" fill="#64748b" font-size="9">→</text>
+  <rect x="200" y="622" width="105" height="18" rx="3" fill="#166534" stroke="#22c55e" stroke-width="0.5"/>
+  <text x="252" y="635" text-anchor="middle" fill="#bbf7d0" font-size="8">node fallback_retry</text>
+  <text x="312" y="635" fill="#64748b" font-size="9">→</text>
+  <rect x="320" y="622" width="100" height="18" rx="3" fill="#166534" stroke="#22c55e" stroke-width="0.5"/>
+  <text x="370" y="635" text-anchor="middle" fill="#bbf7d0" font-size="8">graph retry_target</text>
+  <text x="427" y="635" fill="#64748b" font-size="9">→</text>
+  <rect x="435" y="622" width="105" height="18" rx="3" fill="#166534" stroke="#22c55e" stroke-width="0.5"/>
+  <text x="487" y="635" text-anchor="middle" fill="#bbf7d0" font-size="8">graph fallback_retry</text>
+
+  <!-- Goal gate failure -->
+  <rect x="630" y="535" width="240" height="105" rx="6" fill="#1a2332" stroke="#475569" stroke-width="1"/>
+  <text x="750" y="558" text-anchor="middle" fill="#e2e8f0" font-size="11" font-weight="500">If any gate unsatisfied:</text>
+
+  <!-- Retry arrow looping back up -->
+  <rect x="650" y="567" width="200" height="28" rx="5" fill="#422006" stroke="#f59e0b" stroke-width="1"/>
+  <text x="750" y="585" text-anchor="middle" fill="#fde68a" font-size="10">Retry → loop back to target node</text>
+
+  <rect x="650" y="603" width="200" height="28" rx="5" fill="#450a0a" stroke="#dc2626" stroke-width="1"/>
+  <text x="750" y="621" text-anchor="middle" fill="#fca5a5" font-size="10">No target → GoalGateUnsatisfied</text>
+
+  <line x1="599" y1="580" x2="626" y2="580" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#arrow-amber)"/>
+
+  <!-- Retry loop arrow back to layer 2 -->
+  <path d="M 850 581 L 870 581 L 870 239 L 599 239" stroke="#f59e0b" stroke-width="2" fill="none" marker-end="url(#arrow-amber)" stroke-dasharray="6,3"/>
+  <text x="880" y="410" fill="#fcd34d" font-size="10" font-weight="500" transform="rotate(-90, 880, 410)">retry loop</text>
+
+  <!-- Arrow down -->
+  <line x1="335" y1="654" x2="335" y2="674" stroke="#16a34a" stroke-width="2" marker-end="url(#arrow-green)"/>
+  <text x="350" y="669" fill="#4ade80" font-size="9">all gates pass</text>
+
+  <!-- ─────────────────────────────────────────────── -->
+  <!-- LAYER 6: Budget / Step Guards                   -->
+  <!-- ─────────────────────────────────────────────── -->
+  <circle cx="40" cy="715" r="18" fill="#4c0519"/>
+  <text x="40" y="720" text-anchor="middle" fill="#fda4af" font-size="16" font-weight="700">6</text>
+
+  <rect x="75" y="682" width="520" height="68" rx="8" fill="#4c0519" stroke="#e11d48" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="90" y="705" fill="#fda4af" font-size="10" font-weight="600">RESOURCE GUARDRAILS — Checked Continuously</text>
+  <text x="90" y="725" fill="#ffe4e6" font-size="14" font-weight="600">Budget + Step Limits</text>
+  <text x="90" y="742" fill="#fda4af" font-size="11">max_steps, max_budget_usd, max_retries — abort if exceeded at any point</text>
+
+  <!-- Failure box -->
+  <rect x="630" y="692" width="240" height="48" rx="6" fill="#450a0a" stroke="#dc2626" stroke-width="1"/>
+  <text x="750" y="714" text-anchor="middle" fill="#fca5a5" font-size="11" font-weight="500">Pipeline Abort</text>
+  <text x="750" y="730" text-anchor="middle" fill="#f87171" font-size="10">Clear message — no runaway loops</text>
+  <line x1="599" y1="716" x2="626" y2="716" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+
+  <!-- Budget guard dashed line spanning all layers -->
+  <rect x="600" y="105" width="4" height="640" rx="2" fill="#4c0519" opacity="0.3"/>
+  <text x="614" y="770" fill="#fda4af" font-size="8" font-style="italic">budget checked at every layer</text>
+
+  <!-- ─────────────────────────────────────────────── -->
+  <!-- BOTTOM: Pipeline Complete                       -->
+  <!-- ─────────────────────────────────────────────── -->
+  <line x1="335" y1="754" x2="335" y2="780" stroke="#16a34a" stroke-width="2.5" marker-end="url(#arrow-green)"/>
+
+  <rect x="200" y="784" width="270" height="28" rx="6" fill="#14532d" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="335" y="803" text-anchor="middle" fill="#4ade80" font-size="13" font-weight="600">Pipeline Complete — Verified Output</text>
+</svg>
