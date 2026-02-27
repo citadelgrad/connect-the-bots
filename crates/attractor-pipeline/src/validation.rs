@@ -1,6 +1,6 @@
 //! Pipeline validation: lint rules and diagnostics.
 //!
-//! Provides 11 built-in rules that check structural and semantic correctness of
+//! Provides 12 built-in rules that check structural and semantic correctness of
 //! a [`PipelineGraph`].  Call [`validate`] for advisory diagnostics or
 //! [`validate_or_raise`] to fail on the first `Error`-severity issue.
 
@@ -373,6 +373,40 @@ impl LintRule for GoalGateHasRetryRule {
     }
 }
 
+struct ProviderValidRule;
+impl LintRule for ProviderValidRule {
+    fn name(&self) -> &str {
+        "provider_valid"
+    }
+    fn apply(&self, graph: &PipelineGraph) -> Vec<Diagnostic> {
+        const KNOWN: &[&str] = &["claude", "anthropic", "codex", "openai", "gemini", "google"];
+        graph
+            .all_nodes()
+            .filter(|n| is_llm_node(&n.shape))
+            .filter_map(|n| {
+                let provider = n.llm_provider.as_deref()?;
+                if KNOWN.contains(&provider) {
+                    return None;
+                }
+                Some(Diagnostic {
+                    rule: self.name().into(),
+                    severity: Severity::Warning,
+                    message: format!(
+                        "Node '{}' has unknown llm_provider '{}'; known: claude, codex, gemini",
+                        n.id, provider
+                    ),
+                    node_id: Some(n.id.clone()),
+                    edge: None,
+                    fix: Some(
+                        "Use one of: claude, codex, gemini (aliases: anthropic, openai, google)"
+                            .into(),
+                    ),
+                })
+            })
+            .collect()
+    }
+}
+
 struct PromptOnLlmNodesRule;
 impl LintRule for PromptOnLlmNodesRule {
     fn name(&self) -> &str { "prompt_on_llm_nodes" }
@@ -417,6 +451,7 @@ pub fn validate(graph: &PipelineGraph) -> Vec<Diagnostic> {
         Box::new(FidelityValidRule),
         Box::new(RetryTargetExistsRule),
         Box::new(GoalGateHasRetryRule),
+        Box::new(ProviderValidRule),
         Box::new(PromptOnLlmNodesRule),
     ];
 
@@ -637,6 +672,57 @@ mod tests {
         assert!(
             diags.iter().any(|d| d.rule == "exit_no_outgoing" && d.severity == Severity::Error),
             "Expected exit_no_outgoing error, got: {diags:?}"
+        );
+    }
+
+    #[test]
+    fn provider_valid_warns_on_unknown() {
+        let pg = parse_and_build(r#"digraph G {
+            start [shape="Mdiamond"]
+            step [llm_provider="llama", prompt="Do work"]
+            done [shape="Msquare"]
+            start -> step -> done
+        }"#);
+        let diags = validate(&pg);
+        assert!(
+            diags.iter().any(|d| d.rule == "provider_valid" && d.severity == Severity::Warning),
+            "Expected provider_valid warning for unknown provider, got: {diags:?}"
+        );
+    }
+
+    #[test]
+    fn provider_valid_accepts_known_providers() {
+        for provider in &["claude", "anthropic", "codex", "openai", "gemini", "google"] {
+            let dot = format!(
+                r#"digraph G {{
+                    start [shape="Mdiamond"]
+                    step [llm_provider="{}", prompt="Do work"]
+                    done [shape="Msquare"]
+                    start -> step -> done
+                }}"#,
+                provider
+            );
+            let pg = parse_and_build(&dot);
+            let diags = validate(&pg);
+            assert!(
+                !diags.iter().any(|d| d.rule == "provider_valid"),
+                "Unexpected provider_valid diagnostic for known provider '{provider}': {diags:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn provider_valid_skips_nodes_without_provider() {
+        let pg = parse_and_build(r#"digraph G {
+            start [shape="Mdiamond"]
+            step [prompt="Do work"]
+            done [shape="Msquare"]
+            start -> step -> done
+        }"#);
+        let diags = validate(&pg);
+        assert!(
+            !diags.iter().any(|d| d.rule == "provider_valid"),
+            "Should not warn when llm_provider is absent, got: {diags:?}"
         );
     }
 

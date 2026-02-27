@@ -221,11 +221,11 @@ impl PipelineExecutor {
                     "preferred_label" => outcome.preferred_label.clone().unwrap_or_default(),
                     _ => ctx_snapshot
                         .get(key)
-                        .and_then(|v| match v {
-                            serde_json::Value::String(s) => Some(s.clone()),
-                            serde_json::Value::Bool(b) => Some(b.to_string()),
-                            serde_json::Value::Number(n) => Some(n.to_string()),
-                            _ => Some(v.to_string()),
+                        .map(|v| match v {
+                            serde_json::Value::String(s) => s.clone(),
+                            serde_json::Value::Bool(b) => b.to_string(),
+                            serde_json::Value::Number(n) => n.to_string(),
+                            _ => v.to_string(),
                         })
                         .unwrap_or_default(),
                 }

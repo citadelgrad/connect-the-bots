@@ -75,6 +75,9 @@ pub enum AttractorError {
     #[error("Command timed out after {timeout_ms}ms")]
     CommandTimeout { timeout_ms: u64 },
 
+    #[error("CLI binary '{binary}' not found — ensure it is installed and on PATH")]
+    CliNotFound { binary: String },
+
     // === Agent Errors ===
     #[error("Agent loop detected after {window} consecutive identical tool calls")]
     LoopDetected { window: usize },
@@ -111,6 +114,7 @@ impl AttractorError {
             AttractorError::AuthError { .. }
                 | AttractorError::ValidationError(_)
                 | AttractorError::ContextLengthExceeded { .. }
+                | AttractorError::CliNotFound { .. }
         )
     }
 
