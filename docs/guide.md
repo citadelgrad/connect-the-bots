@@ -19,6 +19,7 @@ Attractor is a pipeline runner for AI workflows. You define pipelines as DOT (Gr
 - [Integrating with Beads](#integrating-with-beads)
 - [Adding to Your Project](#adding-to-your-project)
 - [Writing Effective Prompts](#writing-effective-prompts)
+- [Multi-Provider Support](#multi-provider-support)
 - [Cost Control](#cost-control)
 - [Troubleshooting](#troubleshooting)
 
@@ -138,6 +139,7 @@ digraph PipelineName {
 | `prompt` | string | — | **The task sent to Claude Code.** Required for `box` and `diamond` nodes. |
 | `node_type` | string | auto | Explicit handler type override (`"conditional"`, `"tool"`, `"parallel"`, `"fan_in"`, `"manager"`) |
 | `llm_model` | string | graph `model` | Model override for this node (`"haiku"`, `"sonnet"`, `"opus"`, or full model ID) |
+| `llm_provider` | string | `"claude"` | CLI provider for this node: `"claude"`, `"codex"`, or `"gemini"` |
 | `allowed_tools` | string | all | Comma-separated Claude Code tool list (`"Read,Grep,Glob"` for read-only) |
 | `max_budget_usd` | string | unlimited | Maximum spend for this node's Claude Code session |
 | `goal_gate` | boolean | false | If true, this node must succeed for the pipeline to complete |
@@ -383,7 +385,7 @@ Graph attributes are available as `${ctx.attribute_name}`. Context values set by
 
 ## Validation Rules
 
-Run `attractor-cli validate pipeline.dot` to check your pipeline. The validator runs 11 lint rules:
+Run `attractor-cli validate pipeline.dot` to check your pipeline. The validator runs 12 lint rules:
 
 | Rule | Severity | What it checks |
 |------|----------|----------------|
@@ -397,6 +399,7 @@ Run `attractor-cli validate pipeline.dot` to check your pipeline. The validator 
 | FidelityValidRule | Warning | Fidelity values are one of: full, truncate, compact, summary |
 | RetryTargetExistsRule | Warning | Retry targets reference existing nodes |
 | GoalGateHasRetryRule | Warning | Goal gate nodes have a retry target defined |
+| ProviderValidRule | Warning | `llm_provider` values are one of: claude, codex, gemini |
 | PromptOnLlmNodesRule | Warning | Box/diamond nodes have a `prompt` attribute |
 
 Errors prevent execution. Warnings are reported but don't block.
@@ -792,6 +795,77 @@ implement  [prompt="Read .attractor/findings.md for context, then..."]
 
 ---
 
+## Multi-Provider Support
+
+By default, pipeline nodes use Claude Code CLI. You can switch individual nodes (or all nodes via stylesheets) to use **OpenAI Codex CLI** or **Google Gemini CLI** instead.
+
+### Supported providers
+
+| Provider | Binary | Value |
+|----------|--------|-------|
+| Claude Code | `claude` | `"claude"` (default) |
+| OpenAI Codex | `codex` | `"codex"` |
+| Google Gemini | `gemini` | `"gemini"` |
+
+### Per-node provider
+
+Set `llm_provider` on any `box` or `diamond` node:
+
+```dot
+digraph MultiProvider {
+    start [shape="Mdiamond"]
+
+    analyze [shape="box", llm_provider="claude",
+        prompt="Analyze the codebase"]
+    implement [shape="box", llm_provider="codex",
+        prompt="Implement the feature"]
+    review [shape="box", llm_provider="gemini",
+        prompt="Review the changes"]
+
+    done [shape="Msquare"]
+
+    start -> analyze -> implement -> review -> done
+}
+```
+
+### Provider via stylesheets
+
+Apply a provider to all nodes or groups of nodes:
+
+```dot
+digraph Pipeline {
+    stylesheet="
+        * { llm_provider: codex; }
+        .review { llm_provider: claude; }
+    "
+
+    start [shape="Mdiamond"]
+    work [shape="box", prompt="Do the work"]
+    check [shape="box", classes="review", prompt="Review results"]
+    done [shape="Msquare"]
+
+    start -> work -> check -> done
+}
+```
+
+### Provider-specific behavior
+
+Each provider has different CLI flags and output formats. Attractor handles this automatically:
+
+- **Claude**: Uses `--output-format json` and `-p` for the prompt. Returns structured JSON.
+- **Codex**: Uses `--output-format jsonl` with the prompt as a positional argument. Returns streaming JSONL events; Attractor extracts the last `message` event.
+- **Gemini**: Uses `--output-format json` and `-p` for the prompt, plus `--sandbox none` for full access. Returns structured JSON.
+
+### CLI not found
+
+If a provider's CLI binary isn't installed, the pipeline will fail with a `CliNotFound` error identifying the missing binary. Install the required CLI before running:
+
+- Claude: `npm install -g @anthropic-ai/claude-code`
+- Codex: `npm install -g @openai/codex`
+- Gemini: `npm install -g @anthropic-ai/gemini-cli`
+
+---
+
 ## Cost Control
 
 ### Per-node budgets
@@ -838,11 +912,12 @@ Per-node costs are stored in context as `{node_id}.cost_usd`.
 
 Your pipeline is missing a node with `shape="Mdiamond"`.
 
-### "Claude CLI exited with..."
+### "CLI exited with..." / "CliNotFound"
 
-The `claude` binary isn't in your PATH, or it returned a non-zero exit code. Check:
-- `which claude` returns a path
-- `claude -p "hello" --output-format json` works standalone
+The provider's CLI binary isn't in your PATH, or it returned a non-zero exit code. Check:
+- `which claude` (or `which codex`, `which gemini`) returns a path
+- The CLI works standalone: `claude -p "hello" --output-format json`
+- If using `llm_provider`, ensure the correct CLI is installed (see [Multi-Provider Support](#multi-provider-support))
 
 ### Node always takes the same branch
 
