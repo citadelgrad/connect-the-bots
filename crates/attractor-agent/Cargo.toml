@@ -7,7 +7,7 @@ description = "Autonomous coding agent loop: LLM + tool execution cycle"
 
 [dependencies]
 attractor-types = { path = "../attractor-types" }
-attractor-llm = { path = "../attractor-llm" }
+attractor-llm = { path = "../attractor-llm", features = ["providers"] }
 attractor-tools = { path = "../attractor-tools" }
 serde = { workspace = true }
 serde_json = { workspace = true }
