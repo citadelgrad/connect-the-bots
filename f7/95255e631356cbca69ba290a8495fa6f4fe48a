@@ -1,0 +1,37 @@
+crates/attractor-cli/src/commands/scaffold.rs
+  a728b785d0ecb50b 1-107
+crates/attractor-cli/src/commands/validate.rs
+  a728b785d0ecb50b 1-29
+crates/attractor-cli/src/commands/mod.rs
+  a728b785d0ecb50b 1-13
+crates/attractor-cli/src/commands/decompose.rs
+  a728b785d0ecb50b 1-512
+crates/attractor-cli/src/main.rs
+  a728b785d0ecb50b 3-4,8,151
+crates/attractor-cli/src/commands/info.rs
+  a728b785d0ecb50b 1-34
+crates/attractor-cli/src/commands/plan.rs
+  a728b785d0ecb50b 1-118
+crates/attractor-cli/src/commands/run.rs
+  a728b785d0ecb50b 1-101
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.7",
+  "base_commit_sha": "f795255e631356cbca69ba290a8495fa6f4fe48a",
+  "prompts": {
+    "a728b785d0ecb50b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "47ca83f9-c8b5-47e0-b91a-95ad9e1375c3",
+        "model": "unknown"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 1114,
+      "total_deletions": 1079,
+      "accepted_lines": 1113,
+      "overriden_lines": 0
+    }
+  }
+}
