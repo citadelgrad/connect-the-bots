@@ -1,0 +1,25 @@
+crates/attractor-agent/src/lib.rs
+  a728b785d0ecb50b 10-11,430-432
+crates/attractor-agent/src/test_utils.rs
+  a728b785d0ecb50b 1-189
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.7",
+  "base_commit_sha": "03f3d4a85c4aa392d817338b0b431888f24a27a6",
+  "prompts": {
+    "a728b785d0ecb50b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "47ca83f9-c8b5-47e0-b91a-95ad9e1375c3",
+        "model": "unknown"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 194,
+      "overriden_lines": 0
+    }
+  }
+}
