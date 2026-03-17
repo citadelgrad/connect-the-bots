@@ -1,0 +1,27 @@
+crates/attractor-pipeline/Cargo.toml
+  daf2d5fc9fff3eda 23
+crates/attractor-pipeline/src/handlers/codergen_handler.rs
+  daf2d5fc9fff3eda 184-185,528-532,536-537,541-563
+Cargo.toml
+  daf2d5fc9fff3eda 15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.12",
+  "base_commit_sha": "a301519b231db885e76cd94eea970cec92cedb73",
+  "prompts": {
+    "daf2d5fc9fff3eda": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "55010040-c256-4c37-a6b6-a03227d6eb56",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Scott Nixon <citadelgrad@gmail.com>",
+      "messages": [],
+      "total_additions": 39,
+      "total_deletions": 14,
+      "accepted_lines": 35,
+      "overriden_lines": 0
+    }
+  }
+}
