@@ -180,7 +180,9 @@ fn build_cli_command(cfg: &CliRunConfig<'_>) -> tokio::process::Command {
                 .arg("--output-format")
                 .arg("json")
                 .arg("--no-session-persistence")
-                .arg("--dangerously-skip-permissions");
+                .arg("--dangerously-skip-permissions")
+                .arg("--strict-mcp-config")
+                .arg("--disable-slash-commands");
             if let Some(model) = cfg.model {
                 cmd.arg("--model").arg(model);
             }
@@ -523,20 +525,42 @@ impl NodeHandler for CodergenHandler {
             }
         })?;
 
-        // Apply timeout (default 10 minutes, configurable via node.timeout)
+        // Apply timeout (default 10 minutes, configurable via node.timeout).
+        // IMPORTANT: We capture the PID before wait_with_output() consumes the
+        // Child. On timeout, we kill the process tree — tokio::time::timeout
+        // only drops the future, it does NOT kill the child process.
+        let child_pid = child.id();
         let timeout_dur = node
             .timeout
             .unwrap_or(std::time::Duration::from_secs(600));
-        let output = tokio::time::timeout(timeout_dur, child.wait_with_output())
-            .await
-            .map_err(|_| AttractorError::CommandTimeout {
-                timeout_ms: timeout_dur.as_millis() as u64,
-            })?
-            .map_err(|e| AttractorError::HandlerError {
+        let output = match tokio::time::timeout(timeout_dur, child.wait_with_output()).await {
+            Ok(result) => result.map_err(|e| AttractorError::HandlerError {
                 handler: "codergen".into(),
                 node: node.id.clone(),
                 message: format!("{} execution failed: {}", provider.display_name(), e),
-            })?;
+            })?,
+            Err(_elapsed) => {
+                // Timeout fired — kill the child process and its descendants
+                if let Some(pid) = child_pid {
+                    tracing::warn!(
+                        node = %node.id,
+                        pid = pid,
+                        timeout_secs = timeout_dur.as_secs(),
+                        "Killing timed-out {} process",
+                        provider.display_name()
+                    );
+                    // SIGKILL the child process — its MCP server children will
+                    // get SIGHUP when their parent exits.
+                    #[cfg(unix)]
+                    unsafe {
+                        libc::kill(pid as i32, libc::SIGKILL);
+                    }
+                }
+                return Err(AttractorError::CommandTimeout {
+                    timeout_ms: timeout_dur.as_millis() as u64,
+                });
+            }
+        };
 
         let stdout = String::from_utf8_lossy(&output.stdout);
         let stderr = String::from_utf8_lossy(&output.stderr);
