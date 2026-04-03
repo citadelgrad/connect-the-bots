@@ -1,6 +1,6 @@
-# Attractor User Guide
+# PAS User Guide
 
-Attractor is a pipeline runner for AI workflows. You define pipelines as DOT (Graphviz) digraphs. Each node becomes a Claude Code session that runs your prompt. The engine handles traversal, branching, retries, quality gates, and cost tracking.
+PAS (Pascal's Discrete Attractor) is a pipeline runner for AI workflows. You define pipelines as DOT (Graphviz) digraphs. Each node becomes a Claude Code session that runs your prompt. The engine handles traversal, branching, retries, quality gates, and cost tracking.
 
 ## Table of Contents
 
@@ -36,11 +36,11 @@ For full CLI documentation with all flags, examples, and environment setup, see 
 ### Build
 
 ```bash
-cd /path/to/attractor
-cargo build --release
+cd /path/to/connect-the-bots
+./install.sh
 ```
 
-The binary is at `target/release/attractor-cli`.
+This builds a release binary and installs it to `~/.local/bin/pas`.
 
 ### Create a pipeline
 
@@ -63,18 +63,18 @@ digraph Hello {
 ### Run it
 
 ```bash
-attractor-cli run hello.dot -w /path/to/your/project
+pas run hello.dot -w /path/to/your/project
 ```
 
 ### Other commands
 
 ```bash
-attractor-cli validate hello.dot   # Check for errors without running
-attractor-cli info hello.dot       # Show structure (nodes, edges, goal)
-attractor-cli plan --prd           # Generate a PRD template
-attractor-cli plan --spec          # Generate a spec template
-attractor-cli decompose spec.md   # Decompose spec into beads tasks
-attractor-cli scaffold <EPIC_ID>   # Scaffold pipeline from beads epic
+pas validate hello.dot   # Check for errors without running
+pas info hello.dot       # Show structure (nodes, edges, goal)
+pas plan --prd           # Generate a PRD template
+pas plan --spec          # Generate a spec template
+pas decompose spec.md   # Decompose spec into beads tasks
+pas scaffold <EPIC_ID>   # Scaffold pipeline from beads epic
 ```
 
 ---
@@ -385,7 +385,7 @@ Graph attributes are available as `${ctx.attribute_name}`. Context values set by
 
 ## Validation Rules
 
-Run `attractor-cli validate pipeline.dot` to check your pipeline. The validator runs 12 lint rules:
+Run `pas validate pipeline.dot` to check your pipeline. The validator runs 12 lint rules:
 
 | Rule | Severity | What it checks |
 |------|----------|----------------|
@@ -518,10 +518,10 @@ digraph FixBug {
         allowed_tools="Read,Grep,Glob",
         prompt="Read the session configuration and authentication middleware.
 Find where the timeout is set. Check for hardcoded values vs config.
-Write findings to .attractor/investigation.md"]
+Write findings to .pas/investigation.md"]
 
     implement [shape="box", label="Implement Fix",
-        prompt="Based on .attractor/investigation.md, fix the session timeout.
+        prompt="Based on .pas/investigation.md, fix the session timeout.
 Change the hardcoded 300 to use the SESSION_TIMEOUT_SECONDS env var with a default of 1800.
 Only modify the necessary files."]
 
@@ -563,7 +563,7 @@ Run: bd sync --flush-only"]
 
 ## Planning Workflow
 
-Attractor includes a full planning-to-execution workflow that bridges structured documents to beads issue tracking to pipeline execution.
+PAS includes a full planning-to-execution workflow that bridges structured documents to beads issue tracking to pipeline execution.
 
 ### The flow
 
@@ -571,17 +571,17 @@ Attractor includes a full planning-to-execution workflow that bridges structured
 write PRD → review → write spec → review → decompose → scaffold → validate → execute
 ```
 
-The **PRD** captures *what and why* (goals, user stories, requirements). The **spec** captures *how* (architecture, file changes, implementation phases). The spec's phases become beads issues, which become an attractor pipeline.
+The **PRD** captures *what and why* (goals, user stories, requirements). The **spec** captures *how* (architecture, file changes, implementation phases). The spec's phases become beads issues, which become a PAS pipeline.
 
 ### Step 1: Generate documents
 
 ```bash
 # Generate a PRD from a one-line description
-attractor plan --prd --from-prompt "Add real-time notifications via WebSockets"
+pas plan --prd --from-prompt "Add real-time notifications via WebSockets"
 
 # Or copy the blank template for manual editing
-attractor plan --prd
-attractor plan --spec
+pas plan --prd
+pas plan --spec
 ```
 
 Templates are in `templates/prd-template.md` and `templates/spec-template.md`. The PRD template includes sections for overview, goals, user stories, functional requirements, constraints, risks, and success criteria. The spec template includes architecture overview, file changes, implementation phases, configuration, testing strategy, and rollback plan.
@@ -590,10 +590,10 @@ Templates are in `templates/prd-template.md` and `templates/spec-template.md`. T
 
 ```bash
 # Preview the beads commands that would be created
-attractor decompose .attractor/spec.md --dry-run
+pas decompose .pas/spec.md --dry-run
 
 # Create the epic and tasks
-attractor decompose .attractor/spec.md
+pas decompose .pas/spec.md
 ```
 
 This reads the spec's `## Implementation Phases` section and creates:
@@ -605,13 +605,13 @@ This reads the spec's `## Implementation Phases` section and creates:
 
 ```bash
 # Generate a pipeline from the beads epic
-attractor scaffold <EPIC_ID>
+pas scaffold <EPIC_ID>
 
 # Validate it
-attractor validate pipelines/<EPIC_ID>.dot
+pas validate pipelines/<EPIC_ID>.dot
 
 # Run it
-attractor run pipelines/<EPIC_ID>.dot -w .
+pas run pipelines/<EPIC_ID>.dot -w .
 ```
 
 The scaffold command uses the `epic-runner` template, which loops through all child tasks of the epic: pick task → investigate → implement → test → verify → close → next task.
@@ -621,7 +621,7 @@ The scaffold command uses the `epic-runner` template, which loops through all ch
 There's a meta-pipeline at `templates/plan-to-execute.dot` that chains the full workflow with human review gates:
 
 ```bash
-attractor run templates/plan-to-execute.dot -w .
+pas run templates/plan-to-execute.dot -w .
 ```
 
 This pipeline:
@@ -642,7 +642,7 @@ Use `hexagon` nodes to pause for human input:
 review [
     shape="hexagon"
     label="Review Changes"
-    prompt="Review the PRD at .attractor/prd.md.
+    prompt="Review the PRD at .pas/prd.md.
 Respond 'continue' to proceed or 'reject' to regenerate."
 ]
 
@@ -654,14 +654,14 @@ review -> regenerate [label="reject", condition="preferred_label=reject"]
 
 ## Integrating with Beads
 
-Attractor pipelines work well with [beads](https://github.com/Dicklesworthstone/beads_viewer) for issue tracking.
+PAS pipelines work well with [beads](https://github.com/Dicklesworthstone/beads_viewer) for issue tracking.
 
 ### Workflow
 
 1. **Find work:** `bd ready` shows issues with no blockers
 2. **Review:** `bd show <issue-id>` to get full context
-3. **Create pipeline:** Write a `.dot` file referencing the issue in the `goal`, or use `attractor scaffold <epic-id>`
-4. **Run:** `attractor-cli run pipelines/fix-issue.dot -w .`
+3. **Create pipeline:** Write a `.dot` file referencing the issue in the `goal`, or use `pas scaffold <epic-id>`
+4. **Run:** `pas run pipelines/fix-issue.dot -w .`
 5. **The pipeline closes the issue** in its final node
 
 ### Referencing issues
@@ -678,10 +678,10 @@ Use `scaffold` to generate a pipeline that iterates through all tasks in a beads
 
 ```bash
 # Create pipeline from epic
-attractor scaffold my-epic-id
+pas scaffold my-epic-id
 
 # Run it — loops through all child tasks automatically
-attractor run pipelines/my-epic-id.dot -w .
+pas run pipelines/my-epic-id.dot -w .
 ```
 
 The generated pipeline follows this loop for each task:
@@ -714,10 +714,10 @@ The `allowed_tools="Bash(bd:*),Bash(git:*)"` restricts this node to only run bea
 For a complete workflow from requirements to running code, see [Planning Workflow](#planning-workflow). The `plan`, `decompose`, and `scaffold` commands chain together:
 
 ```bash
-attractor plan --spec --from-prompt "Add feature X"   # Generate spec
-attractor decompose .attractor/spec.md                 # Create beads tasks
-attractor scaffold <EPIC_ID>                           # Generate pipeline
-attractor run pipelines/<EPIC_ID>.dot -w .             # Execute
+pas plan --spec --from-prompt "Add feature X"   # Generate spec
+pas decompose .pas/spec.md                 # Create beads tasks
+pas scaffold <EPIC_ID>                           # Generate pipeline
+pas run pipelines/<EPIC_ID>.dot -w .             # Execute
 ```
 
 ---
@@ -733,7 +733,7 @@ echo "*.dot" >> .gitignore  # Optional: exclude pipeline files from git
 
 ### 2. Add instructions to AGENTS.md
 
-Copy the template from `templates/attractor.md` in the Attractor repo and append it to your project's `AGENTS.md` or `CLAUDE.md`. This teaches Claude Code how to create and run pipelines when you ask it to.
+Copy the template from `templates/pas.md` in the PAS repo and append it to your project's `AGENTS.md` or `CLAUDE.md`. This teaches Claude Code how to create and run pipelines when you ask it to.
 
 After adding the template, you can say things like:
 
@@ -747,21 +747,21 @@ Claude Code will read the instructions, look up the issue, and generate a `.dot`
 
 ```bash
 # In your shell profile
-alias attractor='/path/to/attractor/target/release/attractor-cli'
+alias pas='~/.local/bin/pas'
 ```
 
 Then run pipelines with:
 
 ```bash
-attractor run pipelines/my-feature.dot -w .
+pas run pipelines/my-feature.dot -w .
 ```
 
-### 4. Add .attractor to .gitignore
+### 4. Add .pas to .gitignore
 
-Pipeline nodes write intermediate files to `.attractor/`:
+Pipeline nodes write intermediate files to `.pas/`:
 
 ```bash
-echo ".attractor/" >> .gitignore
+echo ".pas/" >> .gitignore
 ```
 
 ---
@@ -775,13 +775,13 @@ Each node's `prompt` is the entire context Claude Code receives. It has no memor
 - **Be specific about file paths.** `"Edit mlb_fantasy_jobs/app/tasks/processors.py"` not `"Edit the processor file"`.
 - **Include exact commands.** `"Run: cd mlb_fantasy_jobs && uv run pytest tests/ -x -v -k sync"` not `"Run the tests"`.
 - **One concern per node.** Investigation, implementation, and testing should be separate nodes.
-- **Tell Claude to write output.** `"Write your findings to .attractor/analysis.md"` — otherwise the response vanishes when the node completes.
+- **Tell Claude to write output.** `"Write your findings to .pas/analysis.md"` — otherwise the response vanishes when the node completes.
 - **Reference the goal.** The pipeline `goal` is injected automatically, but reinforcing key details in the prompt helps.
 
 ### Don't
 
 - **Don't combine investigation and implementation.** Read-only first, then edit.
-- **Don't assume context.** Each node is a fresh Claude Code session. Pass information via files (`.attractor/`) or context keys.
+- **Don't assume context.** Each node is a fresh Claude Code session. Pass information via files (`.pas/`) or context keys.
 - **Don't leave prompts vague.** `"Fix the bug"` gives Claude nothing to work with. Include the file, function, and expected behavior.
 
 ### Context flow between nodes
@@ -789,8 +789,8 @@ Each node's `prompt` is the entire context Claude Code receives. It has no memor
 Each node's result is stored as `{node_id}.result` in the pipeline context and injected into subsequent nodes' prompts under "Context from prior pipeline steps." For large outputs, prefer writing to files:
 
 ```dot
-investigate [prompt="...Write findings to .attractor/findings.md"]
-implement  [prompt="Read .attractor/findings.md for context, then..."]
+investigate [prompt="...Write findings to .pas/findings.md"]
+implement  [prompt="Read .pas/findings.md for context, then..."]
 ```
 
 ---
@@ -850,10 +850,10 @@ digraph Pipeline {
 
 ### Provider-specific behavior
 
-Each provider has different CLI flags and output formats. Attractor handles this automatically:
+Each provider has different CLI flags and output formats. PAS handles this automatically:
 
 - **Claude**: Uses `--output-format json` and `-p` for the prompt. Returns structured JSON.
-- **Codex**: Uses `--output-format jsonl` with the prompt as a positional argument. Returns streaming JSONL events; Attractor extracts the last `message` event.
+- **Codex**: Uses `--output-format jsonl` with the prompt as a positional argument. Returns streaming JSONL events; PAS extracts the last `message` event.
 - **Gemini**: Uses `--output-format json` and `-p` for the prompt, plus `--sandbox none` for full access. Returns structured JSON.
 
 ### CLI not found
@@ -938,5 +938,5 @@ If a goal gate node keeps failing and retrying, the pipeline will loop indefinit
 ### Intermediate results are lost
 
 Node outputs are in-memory. If you need to persist them:
-1. Tell the node to write files: `"Write your analysis to .attractor/report.md"`
-2. The CLI prints total cost but not individual node results (check `.attractor/` for written files)
+1. Tell the node to write files: `"Write your analysis to .pas/report.md"`
+2. The CLI prints total cost but not individual node results (check `.pas/` for written files)

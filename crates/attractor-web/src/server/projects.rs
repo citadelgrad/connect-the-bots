@@ -40,28 +40,28 @@ pub struct DirEntry {
     pub is_dir: bool,
 }
 
-/// Ensure `.attractor/CLAUDE.md` exists in the project directory.
+/// Ensure `.pas/CLAUDE.md` exists in the project directory.
 ///
 /// This file tells Claude Code about the PRD/SPEC document system so that when
 /// a terminal session starts, Claude knows to write PRD and SPEC files to the
-/// correct locations (`.attractor/prd.md` and `.attractor/spec.md`).
+/// correct locations (`.pas/prd.md` and `.pas/spec.md`).
 ///
 /// The file is only created if it doesn't already exist — user edits are preserved.
 #[cfg(feature = "ssr")]
 fn scaffold_attractor_config(project_dir: &Path) {
     use std::fs;
 
-    let attractor_dir = project_dir.join(".attractor");
-    let claude_md_path = attractor_dir.join("CLAUDE.md");
+    let pas_dir = project_dir.join(".pas");
+    let claude_md_path = pas_dir.join("CLAUDE.md");
 
     // Don't overwrite if the user has already customized it
     if claude_md_path.exists() {
         return;
     }
 
-    // Ensure .attractor/ exists
-    if let Err(e) = fs::create_dir_all(&attractor_dir) {
-        tracing::warn!("Failed to create .attractor directory: {}", e);
+    // Ensure .pas/ exists
+    if let Err(e) = fs::create_dir_all(&pas_dir) {
+        tracing::warn!("Failed to create .pas directory: {}", e);
         return;
     }
 
@@ -142,13 +142,13 @@ them in real time.
 
 | Document | File Path | Description |
 |----------|-----------|-------------|
-| **PRD** | `.attractor/prd.md` | Product Requirements Document |
-| **Technical Spec** | `.attractor/spec.md` | Technical Specification |
+| **PRD** | `.pas/prd.md` | Product Requirements Document |
+| **Technical Spec** | `.pas/spec.md` | Technical Specification |
 
 ### Rules
 
-1. **Always write PRDs to `.attractor/prd.md`** — the web UI watches this exact path
-2. **Always write specs to `.attractor/spec.md`** — the web UI watches this exact path
+1. **Always write PRDs to `.pas/prd.md`** — the web UI watches this exact path
+2. **Always write specs to `.pas/spec.md`** — the web UI watches this exact path
 3. Do NOT create PRD/spec files in `docs/` or any other location
 4. Overwrite the file each time (the web UI tracks versions via the database)
 5. Follow the templates below for document structure
@@ -207,7 +207,7 @@ mod ssr_impl {
             .ok_or_else(|| ServerFnError::new("Path contains invalid UTF-8"))?
             .to_string();
 
-        // Ensure .attractor/CLAUDE.md exists with PRD/SPEC instructions
+        // Ensure .pas/CLAUDE.md exists with PRD/SPEC instructions
         scaffold_attractor_config(&canonical_path);
 
         // Upsert into database

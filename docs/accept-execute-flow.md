@@ -27,18 +27,18 @@
 │  ┌──────────────────────────────────────┐                           │
 │  │ start_execution()                     │                          │
 │  │                                       │                          │
-│  │  1. Verify .attractor/spec.md exists  │                          │
+│  │  1. Verify .pas/spec.md exists  │                          │
 │  │                                       │                          │
 │  │  2. ┌──────────────────────────┐      │                          │
-│  │     │ $ attractor decompose   │      │                          │
-│  │     │   .attractor/spec.md    │      │                          │
+│  │     │ $ pas decompose         │      │                          │
+│  │     │   .pas/spec.md    │      │                          │
 │  │     └───────────┬──────────────┘      │                          │
 │  │                 │ stdout               │                          │
 │  │                 ▼                      │                          │
 │  │     Parse "Epic ID: attractor-xxx"    │                          │
 │  │                 │                      │                          │
 │  │  3. ┌──────────▼───────────────┐      │                          │
-│  │     │ $ attractor scaffold    │      │                          │
+│  │     │ $ pas scaffold          │      │                          │
 │  │     │   <epic-id>             │      │                          │
 │  │     └───────────┬──────────────┘      │                          │
 │  │                 │                      │                          │
@@ -152,9 +152,9 @@
 ## Sequence Summary
 
 1. **Click** → `ApprovalBar` dispatches Leptos server fn `start_execution()`
-2. **Server** verifies `.attractor/spec.md` exists
-3. **Decompose** → `$ attractor decompose .attractor/spec.md` → parses epic ID
-4. **Scaffold** → `$ attractor scaffold <epic-id>` → generates pipeline `.dot` file
+2. **Server** verifies `.pas/spec.md` exists
+3. **Decompose** → `$ pas decompose .pas/spec.md` → parses epic ID
+4. **Scaffold** → `$ pas scaffold <epic-id>` → generates pipeline `.dot` file
 5. **Parse** → reads `.dot` file, builds `PipelineGraph`
 6. **Spawn** → background tokio task runs `run_pipeline_with_streaming()`
 7. **Return** → `ExecutionResponse { session_id, epic_id, pipeline_path }`

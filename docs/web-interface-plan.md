@@ -1,10 +1,10 @@
-# Attractor Web Interface — Implementation Plan
+# PAS Web Interface — Implementation Plan
 
 ## Context
 
-Attractor is a DOT-based pipeline runner for AI workflows. You're building a parallel workflow on another branch that generates PRDs and spec files, decomposes them into beads, and creates `.dot` pipeline files. This web interface provides a visual layer for that planning process — a place to prompt, review, iterate on PRD/spec documents, and then kick off pipeline execution with live streaming progress.
+PAS (Pascal's Discrete Attractor) is a DOT-based pipeline runner for AI workflows. You're building a parallel workflow on another branch that generates PRDs and spec files, decomposes them into beads, and creates `.dot` pipeline files. This web interface provides a visual layer for that planning process — a place to prompt, review, iterate on PRD/spec documents, and then kick off pipeline execution with live streaming progress.
 
-The repo is a git worktree of the main attractor project on `feature/interface-web`.
+The repo is a git worktree of the main PAS project on `feature/interface-web`.
 
 ## Architecture
 
@@ -52,7 +52,7 @@ crates/attractor-web/
 4. User edits both documents freely, iterates
 5. User clicks "Execute" → server fn:
    - Generates session_id (UUID v4)
-   - Writes PRD + Spec to workdir/.attractor/
+   - Writes PRD + Spec to workdir/.pas/
    - Spawns pipeline via PipelineExecutor with EventEmitter
    - Returns session_id
 6. Browser opens EventSource to /api/stream/{session_id}

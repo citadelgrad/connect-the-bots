@@ -1,16 +1,16 @@
-# Attractor
+# PAS — Pascal's Discrete Attractor
 
 A DOT-based pipeline runner for AI workflows. Define multi-step agent pipelines as Graphviz digraphs, then run them with built-in tool use, multi-provider LLM support, and checkpoint/resume.
 
 These loops don't just handle failure — they create iterative refinement. A pipeline can produce progressively better output across multiple passes without any single component knowing about "quality improvement." The retry system handles transient failures, context accumulation builds knowledge, and goal gates enforce standards. Together they produce convergent behavior toward a quality threshold that no individual loop implements.
 
 <p align="center">
-  <img src="docs/pipeline-overview.svg" alt="How Attractor Works" width="800"/>
+  <img src="docs/pipeline-overview.svg" alt="How PAS Works" width="800"/>
 </p>
 
 ### How verification works
 
-Attractor doesn't just run tasks — it verifies them. Six layers of checks ensure that every pipeline node actually did what it was supposed to do, from static analysis before any LLM call to runtime proof-of-work at the exit gate.
+PAS doesn't just run tasks — it verifies them. Six layers of checks ensure that every pipeline node actually did what it was supposed to do, from static analysis before any LLM call to runtime proof-of-work at the exit gate.
 
 <p align="center">
   <img src="docs/verification-deep-dive.svg" alt="Verification Deep Dive" width="800"/>
@@ -27,7 +27,7 @@ For the full specification including code references and examples, see **[docs/t
 
 ## Overview
 
-Attractor lets you describe AI workflows as directed graphs using DOT syntax. Each node is a step (LLM call, tool use, human gate, parallel fan-out) and edges define the flow with optional conditions. The engine handles execution, edge selection, retries, goal enforcement, and cost tracking.
+PAS lets you describe AI workflows as directed graphs using DOT syntax. Each node is a step (LLM call, tool use, human gate, parallel fan-out) and edges define the flow with optional conditions. The engine handles execution, edge selection, retries, goal enforcement, and cost tracking.
 
 ```dot
 digraph CodeReview {
@@ -43,7 +43,7 @@ digraph CodeReview {
 
 ## Claude Code Integration
 
-Attractor's default `codergen` handler executes pipeline nodes by shelling out to your local [Claude Code](https://docs.anthropic.com/en/docs/claude-code) installation (`claude` CLI). This means each node in your pipeline gets the full agentic capabilities of Claude Code — file editing, bash execution, multi-turn tool use — powered by your existing Claude subscription with no separate API keys required.
+PAS's default `codergen` handler executes pipeline nodes by shelling out to your local [Claude Code](https://docs.anthropic.com/en/docs/claude-code) installation (`claude` CLI). This means each node in your pipeline gets the full agentic capabilities of Claude Code — file editing, bash execution, multi-turn tool use — powered by your existing Claude subscription with no separate API keys required.
 
 Under the hood, each `codergen` node runs:
 
@@ -64,12 +64,13 @@ The handler parses Claude Code's JSON response to extract the result, cost, turn
 
 Conditional nodes (`shape=diamond`) automatically instruct Claude Code to select an outgoing edge label, enabling LLM-driven branching.
 
-For nodes that only need a single LLM completion without tool use, Attractor also provides direct API handlers for OpenAI, Anthropic, and Gemini via the `attractor-llm` crate.
+For nodes that only need a single LLM completion without tool use, PAS also provides direct API handlers for OpenAI, Anthropic, and Gemini via the `attractor-llm` crate.
 
 ## Features
 
 - **Claude Code as execution engine** -- Pipeline nodes run via your local `claude` CLI, getting full agentic tool use with no extra API keys
 - **DOT pipeline definitions** -- Standard Graphviz digraph syntax with typed attributes (strings, integers, floats, booleans, durations)
+- **Direct pipeline generation** -- Pass a PRD and/or spec file to generate a self-contained .dot pipeline (no external issue tracker required)
 - **Planning workflow** -- Generate PRD and spec documents from templates or AI prompts, decompose specs into beads issues, scaffold pipelines from epics
 - **Beads integration** -- Decompose specs into epics and tasks, scaffold pipelines from beads epics, close issues as pipeline nodes complete
 - **Multi-provider LLM support** -- OpenAI, Anthropic, and Gemini adapters with unified request/response types
@@ -88,13 +89,15 @@ For nodes that only need a single LLM completion without tool use, Attractor als
 ## Installation
 
 ```sh
-cargo install --path crates/attractor-cli
+./install.sh
 ```
 
-Or build from source:
+This builds a release binary and installs it to `~/.local/bin/pas`.
+
+Or install via cargo:
 
 ```sh
-cargo build --release
+cargo install --path crates/attractor-cli
 ```
 
 ## Usage
@@ -102,50 +105,66 @@ cargo build --release
 ### Run a pipeline
 
 ```sh
-attractor run pipeline.dot --workdir ./my-project
+pas run pipeline.dot --workdir ./my-project
 ```
 
 ### Validate a pipeline
 
 ```sh
-attractor validate pipeline.dot
+pas validate pipeline.dot
 ```
 
 ### Inspect a pipeline
 
 ```sh
-attractor info pipeline.dot
+pas info pipeline.dot
 ```
 
 ### Dry run (no LLM calls)
 
 ```sh
-attractor run pipeline.dot --dry-run
+pas run pipeline.dot --dry-run
+```
+
+### Generate a pipeline from a spec (no beads)
+
+```sh
+# Spec only
+pas generate spec.md
+
+# PRD + spec (positional)
+pas generate prd.md spec.md
+
+# PRD + spec (named flags)
+pas generate --prd prd.md --spec spec.md
+
+# Custom output path
+pas generate spec.md -o pipelines/my-feature.dot
 ```
 
 ### Planning workflow (PRD → Spec → Beads → Pipeline)
 
 ```sh
 # Generate a PRD from a prompt
-attractor plan --prd --from-prompt "Add user authentication with OAuth2"
+pas plan --prd --from-prompt "Add user authentication with OAuth2"
 
 # Or copy the blank template and edit manually
-attractor plan --spec
+pas plan --spec
 
 # Decompose a spec into beads epic + tasks
-attractor decompose .attractor/spec.md
+pas decompose .pas/spec.md
 
 # Scaffold a pipeline from the beads epic
-attractor scaffold <EPIC_ID>
+pas scaffold <EPIC_ID>
 
 # Run the generated pipeline
-attractor run pipelines/<EPIC_ID>.dot -w .
+pas run pipelines/<EPIC_ID>.dot -w .
 ```
 
 There's also a meta-pipeline that chains the full workflow end-to-end:
 
 ```sh
-attractor run templates/plan-to-execute.dot -w .
+pas run templates/plan-to-execute.dot -w .
 ```
 
 ## Documentation
@@ -160,7 +179,7 @@ attractor run templates/plan-to-execute.dot -w .
 - Planning workflow (PRD → spec → beads → pipeline)
 - Beads integration for issue-driven development
 - Writing effective prompts and controlling costs
-- Adding Attractor to your project
+- Adding PAS to your project
 
 ## Environment Variables
 
@@ -184,7 +203,7 @@ export GEMINI_API_KEY=...
 | `attractor-tools` | Tool trait, registry, built-in tools, execution environment |
 | `attractor-agent` | Agent session loop with steering and loop detection |
 | `attractor-pipeline` | Pipeline graph, engine, handlers, validation, stylesheets |
-| `attractor-cli` | CLI binary (`attractor run`, `validate`, `info`, `plan`, `decompose`, `scaffold`) |
+| `attractor-cli` | CLI binary — `pas` (`run`, `validate`, `info`, `plan`, `decompose`, `scaffold`, `generate`) |
 
 ## License
 

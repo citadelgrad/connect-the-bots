@@ -10,8 +10,8 @@ digraph C4_Context {
 
     user [label="Developer", shape=box, style="rounded,filled", fillcolor="#08427b", fontcolor=white]
 
-    web  [label="Attractor Web\n[Leptos WASM + Axum SSR]", fillcolor="#1168bd", fontcolor=white]
-    cli  [label="Attractor CLI\n[decompose & scaffold]",    fillcolor="#999999", fontcolor=white]
+    web  [label="PAS Web\n[Leptos WASM + Axum SSR]", fillcolor="#1168bd", fontcolor=white]
+    cli  [label="PAS CLI\n[decompose & scaffold]",    fillcolor="#999999", fontcolor=white]
     fs   [label="Filesystem\n[specs, pipelines, issues]",   fillcolor="#999999", fontcolor=white, shape=cylinder]
 
     user -> web [label="Approve & Execute"]
@@ -33,7 +33,7 @@ digraph C4_Container {
     user [label="Developer", fillcolor="#08427b", fontcolor=white]
 
     subgraph cluster_web {
-        label="Attractor Web"
+        label="PAS Web"
         style=dashed
         color="#1168bd"
         fontname="Helvetica"
@@ -45,7 +45,7 @@ digraph C4_Container {
         broadcast [label="Broadcast Channels\n[tokio, in-memory]",   fillcolor="#438dd5", fontcolor=white, shape=cylinder]
     }
 
-    cli [label="Attractor CLI", fillcolor="#999999", fontcolor=white]
+    cli [label="PAS CLI", fillcolor="#999999", fontcolor=white]
     fs  [label="Filesystem",    fillcolor="#999999", fontcolor=white, shape=cylinder]
 
     user      -> wasm      [label="click button"]
@@ -65,8 +65,8 @@ digraph C4_Container {
 | Browser Client | Leptos WASM, xterm.js | Renders UI, dispatches server fns, subscribes to SSE |
 | Axum Server | Rust, Leptos SSR | Handles server fns, spawns CLI processes, streams events |
 | Broadcast Channels | tokio::broadcast | Session-keyed event bus with 100-event replay buffer |
-| Attractor CLI | Rust binary | `decompose` specs into epics, `scaffold` pipeline .dot files |
-| Filesystem | Local disk | `.attractor/spec.md`, `pipelines/*.dot`, beads issues |
+| PAS CLI | Rust binary | `decompose` specs into epics, `scaffold` pipeline .dot files |
+| Filesystem | Local disk | `.pas/spec.md`, `pipelines/*.dot`, beads issues |
 
 ## Level 3: Component
 
@@ -105,7 +105,7 @@ digraph C4_Component {
         replay     [label="SESSION_STATE\n[replay buffer]", fillcolor="#438dd5", fontcolor=white, shape=cylinder]
     }
 
-    cli      [label="Attractor CLI",    fillcolor="#999999", fontcolor=white]
+    cli      [label="PAS CLI",    fillcolor="#999999", fontcolor=white]
     registry [label="Handler Registry",  fillcolor="#999999", fontcolor=white]
 
     approval   -> start_exec [label="POST"]
@@ -150,7 +150,7 @@ digraph Sequence {
     User       [label="Developer",        fillcolor="#08427b", fontcolor=white]
     AB         [label="ApprovalBar",       fillcolor="#1168bd", fontcolor=white]
     SE         [label="start_execution()", fillcolor="#438dd5", fontcolor=white]
-    CLI        [label="Attractor CLI",     fillcolor="#999999", fontcolor=white]
+    CLI        [label="PAS CLI",     fillcolor="#999999", fontcolor=white]
     FS         [label="Filesystem",        fillcolor="#999999", fontcolor=white, shape=cylinder]
     PR         [label="PipelineRunner",    fillcolor="#438dd5", fontcolor=white]
     BC         [label="Broadcast",         fillcolor="#438dd5", fontcolor=white, shape=cylinder]

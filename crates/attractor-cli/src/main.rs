@@ -5,10 +5,10 @@ mod commands;
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
-use commands::{cmd_decompose, cmd_info, cmd_plan, cmd_run, cmd_scaffold, cmd_validate, validate_decomposition};
+use commands::{cmd_decompose, cmd_generate, cmd_info, cmd_plan, cmd_run, cmd_scaffold, cmd_validate, validate_decomposition};
 
 #[derive(Parser)]
-#[command(name = "attractor", version, about = "DOT-based pipeline runner for AI workflows")]
+#[command(name = "pas", version, about = "Pascal's Discrete Attractor — DOT-based pipeline runner for AI workflows")]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -29,7 +29,7 @@ enum Commands {
         #[arg(short, long)]
         workdir: Option<PathBuf>,
 
-        /// Logs output directory (default: .attractor/logs/<pipeline>-<hash>)
+        /// Logs output directory (default: .pas/logs/<pipeline>-<hash>)
         #[arg(short, long)]
         logs: Option<PathBuf>,
 
@@ -72,7 +72,7 @@ enum Commands {
         #[arg(long)]
         from_prompt: Option<String>,
 
-        /// Output file path (defaults: .attractor/prd.md or .attractor/spec.md)
+        /// Output file path (defaults: .pas/prd.md or .pas/spec.md)
         #[arg(short, long)]
         output: Option<PathBuf>,
     },
@@ -97,6 +97,25 @@ enum Commands {
         epic_id: String,
 
         /// Output file path (default: pipelines/<epic-id>.dot)
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+    },
+
+    /// Generate a pipeline directly from PRD and/or spec files (no beads)
+    Generate {
+        /// Input files: spec only, or prd then spec (positional)
+        #[arg(value_name = "FILE")]
+        files: Vec<PathBuf>,
+
+        /// PRD file path (alternative to positional)
+        #[arg(long)]
+        prd: Option<PathBuf>,
+
+        /// Spec file path (alternative to positional)
+        #[arg(long)]
+        spec: Option<PathBuf>,
+
+        /// Output .dot file path (default: pipelines/<spec-stem>.dot)
         #[arg(short, long)]
         output: Option<PathBuf>,
     },
@@ -142,6 +161,39 @@ async fn main() -> anyhow::Result<()> {
         }
         Commands::Scaffold { epic_id, output } => {
             cmd_scaffold(&epic_id, output.as_deref()).await?;
+        }
+        Commands::Generate { files, prd, spec, output } => {
+            // Resolve spec and prd from positional args and/or named flags.
+            // Named flags take precedence over positional args.
+            let (resolved_prd, resolved_spec) = match (prd, spec, files.len()) {
+                // Both named flags provided
+                (Some(p), Some(s), _) => (Some(p), s),
+                // Only --spec provided
+                (None, Some(s), _) => (None, s),
+                // Only --prd provided + one positional (the spec)
+                (Some(p), None, 1) => (Some(p), files[0].clone()),
+                // No flags, one positional = spec only
+                (None, None, 1) => (None, files[0].clone()),
+                // No flags, two positional = prd then spec
+                (None, None, 2) => (Some(files[0].clone()), files[1].clone()),
+                // --prd flag + no positional and no --spec
+                (Some(_), None, 0) => {
+                    anyhow::bail!("Spec file is required. Usage: pas generate [--prd PRD] <SPEC>");
+                }
+                // No args at all
+                (None, None, 0) => {
+                    anyhow::bail!("Spec file is required. Usage: pas generate [PRD] <SPEC>");
+                }
+                _ => {
+                    anyhow::bail!(
+                        "Too many arguments. Usage:\n  \
+                         pas generate <SPEC>\n  \
+                         pas generate <PRD> <SPEC>\n  \
+                         pas generate --prd <PRD> --spec <SPEC>"
+                    );
+                }
+            };
+            cmd_generate(resolved_prd.as_deref(), &resolved_spec, output.as_deref(), cli.verbose).await?;
         }
     }
 

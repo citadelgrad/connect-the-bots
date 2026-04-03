@@ -100,7 +100,7 @@ pub async fn cmd_scaffold(epic_id: &str, output: Option<&std::path::Path>) -> an
     if !has_error {
         println!("\nNext steps:");
         println!("1. Review pipeline: cat {}", output_path.display());
-        println!("2. Run pipeline: attractor run {} -w .", output_path.display());
+        println!("2. Run pipeline: pas run {} -w .", output_path.display());
     }
 
     Ok(())

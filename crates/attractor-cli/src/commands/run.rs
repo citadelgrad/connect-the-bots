@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use anyhow;
 
 /// Generate a unique logs directory name from the pipeline filename and a short random suffix.
-/// Format: `.attractor/logs/<stem>-<8hex>` e.g. `.attractor/logs/attractor-e0n-a3f1b2c9`
+/// Format: `.pas/logs/<stem>-<8hex>` e.g. `.pas/logs/attractor-e0n-a3f1b2c9`
 fn unique_logs_dir(pipeline_path: &std::path::Path) -> PathBuf {
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
@@ -19,7 +19,7 @@ fn unique_logs_dir(pipeline_path: &std::path::Path) -> PathBuf {
     std::process::id().hash(&mut hasher);
     let hash = hasher.finish();
 
-    PathBuf::from(format!(".attractor/logs/{}-{:08x}", stem, hash as u32))
+    PathBuf::from(format!(".pas/logs/{}-{:08x}", stem, hash as u32))
 }
 
 pub async fn cmd_run(

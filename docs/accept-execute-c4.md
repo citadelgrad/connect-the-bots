@@ -6,8 +6,8 @@
 flowchart TB
     user["👤 Developer"]
 
-    web["Attractor Web<br/><i>Leptos WASM + Axum SSR</i>"]
-    cli["Attractor CLI<br/><i>decompose & scaffold</i>"]
+    web["PAS Web<br/><i>Leptos WASM + Axum SSR</i>"]
+    cli["PAS CLI<br/><i>decompose & scaffold</i>"]
     fs[("Filesystem<br/><i>specs, pipelines, issues</i>")]
 
     user -- "Approve & Execute" --> web
@@ -28,13 +28,13 @@ flowchart TB
 flowchart TB
     user["👤 Developer"]
 
-    subgraph web ["Attractor Web"]
+    subgraph web ["PAS Web"]
         wasm["Browser Client<br/><i>Leptos WASM, xterm.js</i>"]
         axum["Axum Server<br/><i>Leptos SSR</i>"]
         broadcast[("Broadcast Channels<br/><i>tokio, in-memory</i>")]
     end
 
-    cli["Attractor CLI"]
+    cli["PAS CLI"]
     fs[("Filesystem")]
 
     user -- "click button" --> wasm
@@ -61,8 +61,8 @@ flowchart TB
 | Browser Client | Leptos WASM, xterm.js | Renders UI, dispatches server fns, subscribes to SSE |
 | Axum Server | Rust, Leptos SSR | Handles server fns, spawns CLI processes, streams events |
 | Broadcast Channels | tokio::broadcast | Session-keyed event bus with 100-event replay buffer |
-| Attractor CLI | Rust binary | `decompose` specs into epics, `scaffold` pipeline .dot files |
-| Filesystem | Local disk | `.attractor/spec.md`, `pipelines/*.dot`, beads issues |
+| PAS CLI | Rust binary | `decompose` specs into epics, `scaffold` pipeline .dot files |
+| Filesystem | Local disk | `.pas/spec.md`, `pipelines/*.dot`, beads issues |
 
 ## Level 3: Component
 
@@ -83,7 +83,7 @@ flowchart TB
         replay[("SESSION_STATE<br/><i>replay buffer</i>")]
     end
 
-    cli["Attractor CLI"]
+    cli["PAS CLI"]
     registry["Handler Registry"]
 
     approval -- "POST" --> start_exec
@@ -136,7 +136,7 @@ sequenceDiagram
     actor User
     participant AB as ApprovalBar
     participant SE as start_execution
-    participant CLI as Attractor CLI
+    participant CLI as PAS CLI
     participant FS as Filesystem
     participant PR as PipelineRunner
     participant BC as Broadcast
@@ -147,10 +147,10 @@ sequenceDiagram
     AB->>SE: POST server fn
 
     SE->>FS: Check spec.md exists
-    SE->>CLI: attractor decompose spec.md
+    SE->>CLI: pas decompose spec.md
     CLI-->>SE: Epic ID: attractor-xxx
 
-    SE->>CLI: attractor scaffold attractor-xxx
+    SE->>CLI: pas scaffold attractor-xxx
     CLI-->>FS: Write .dot file
     CLI-->>SE: exit 0
 

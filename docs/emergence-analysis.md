@@ -1,4 +1,4 @@
-# Emergence Analysis: Attractor Pipeline Engine
+# Emergence Analysis: PAS Pipeline Engine
 
 > **Analytical Lens:** Grady Booch's "Evolutionary Architecture" — where the system mimics biological resilience over mechanical rigidity.
 >
@@ -68,7 +68,7 @@ Each node sees all prior results but doesn't know which nodes produced them or w
 **Collective intelligence.** No single node has the full picture, but the pipeline as a whole accumulates knowledge that makes later nodes more effective. Early nodes doing research improve later nodes doing implementation — not because they were designed to cooperate, but because context accumulation creates implicit knowledge transfer. The pipeline's output quality is greater than the sum of individual node outputs.
 
 **Biological Parallel:**
-**Neural long-term potentiation.** When neurons fire together repeatedly, their synaptic connections strengthen. In Attractor, when a node produces useful context that improves downstream outcomes, the "connection" (context key) persists and strengthens the pipeline's overall performance. The context is the pipeline's working memory — it doesn't forget what it learned.
+**Neural long-term potentiation.** When neurons fire together repeatedly, their synaptic connections strengthen. In PAS, when a node produces useful context that improves downstream outcomes, the "connection" (context key) persists and strengthens the pipeline's overall performance. The context is the pipeline's working memory — it doesn't forget what it learned.
 
 **Optimization Tip:**
 Implement context pruning with relevance scoring. As context grows, later nodes get increasingly long prompts. A `context_relevance` transform could score which prior results are actually useful for each node (based on shared keywords or explicit `depends_on` declarations) and drop low-relevance entries. This mimics synaptic pruning — forgetting irrelevant memories to maintain signal-to-noise ratio.
@@ -164,9 +164,9 @@ Add runtime validation that re-checks invariants mid-execution (e.g., verify tha
 
 ---
 
-## Summary: The Attractor as an Organism
+## Summary: PAS as an Organism
 
-| Biological System | Attractor Equivalent | Emergence |
+| Biological System | PAS Equivalent | Emergence |
 |---|---|---|
 | Thermoregulation | Nested retry + goal gate + context loops | Convergent quality improvement |
 | Pheromone trails | Multi-signal edge selection | Adaptive routing without central control |

@@ -1,23 +1,20 @@
 ---
 
-## Attractor Pipeline System
+## PAS Pipeline System
 
-This project uses **Attractor** — a DOT-based pipeline runner that executes multi-step AI workflows. Each pipeline is a `.dot` file where nodes are Claude Code sessions. Pipelines live in `pipelines/`.
+This project uses **PAS** (Pascal's Discrete Attractor) — a DOT-based pipeline runner that executes multi-step AI workflows. Each pipeline is a `.dot` file where nodes are Claude Code sessions. Pipelines live in `pipelines/`.
 
 ### Running a pipeline
 
 ```bash
-# Binary location (build once, use everywhere)
-ATTRACTOR="/Volumes/qwiizlab/projects/attractor/target/release/attractor-cli"
-
 # Validate before running
-$ATTRACTOR validate pipelines/my-pipeline.dot
+pas validate pipelines/my-pipeline.dot
 
 # Run with working directory set to this repo
-$ATTRACTOR run pipelines/my-pipeline.dot -w .
+pas run pipelines/my-pipeline.dot -w .
 
 # Inspect structure
-$ATTRACTOR info pipelines/my-pipeline.dot
+pas info pipelines/my-pipeline.dot
 ```
 
 ### Creating a pipeline
@@ -88,7 +85,7 @@ start → investigate → implement → write_tests → run_tests → verify
                                                                 └─ FAIL → fixup ──→ verify (loop)
 ```
 
-1. **investigate** — Read-only. `allowed_tools="Read,Grep,Glob"`. Understand the code before touching it. Write findings to `.attractor/`.
+1. **investigate** — Read-only. `allowed_tools="Read,Grep,Glob"`. Understand the code before touching it. Write findings to `.pas/`.
 2. **implement** — Make the code changes. Keep the prompt specific with file paths and exact requirements.
 3. **write_tests** — Write tests matching existing project patterns. Reference specific test directories.
 4. **run_tests** — Execute tests. Prompt should include the exact test command (e.g. `uv run pytest tests/ -k sync`).
@@ -100,38 +97,42 @@ start → investigate → implement → write_tests → run_tests → verify
 
 - **Be specific.** Include file paths, function names, and exact commands. Claude Code in `-p` mode has no prior context.
 - **One concern per node.** Don't combine investigation and implementation.
-- **Write output files.** If a node generates a report or analysis, tell it to write to `.attractor/filename.md`.
+- **Write output files.** If a node generates a report or analysis, tell it to write to `.pas/filename.md`.
 - **Reference the beads issue** in the `goal=` attribute so every node has context.
 - **Use read-only tools for investigation.** `allowed_tools="Read,Grep,Glob"` prevents premature edits.
 - **Include test commands.** Don't say "run tests" — say `cd mlb_fantasy_jobs && uv run pytest tests/ -x -v -k sync_player`.
 
 ### Planning workflow (PRD → Spec → Beads → Pipeline)
 
-Attractor includes commands to go from requirements to running pipeline:
+PAS includes commands to go from requirements to running pipeline:
 
 ```bash
 # Generate a PRD or spec from a description
-$ATTRACTOR plan --prd --from-prompt "Add feature X"
-$ATTRACTOR plan --spec --from-prompt "Add feature X"
+pas plan --prd --from-prompt "Add feature X"
+pas plan --spec --from-prompt "Add feature X"
 
 # Or copy blank templates for manual editing
-$ATTRACTOR plan --prd
-$ATTRACTOR plan --spec
+pas plan --prd
+pas plan --spec
 
-# Decompose spec into beads epic + tasks
-$ATTRACTOR decompose .attractor/spec.md
+# Generate a pipeline directly from spec (no beads required)
+pas generate spec.md
+pas generate prd.md spec.md
+
+# Or decompose spec into beads epic + tasks
+pas decompose .pas/spec.md
 
 # Scaffold pipeline from the beads epic
-$ATTRACTOR scaffold <EPIC_ID>
+pas scaffold <EPIC_ID>
 
 # Run it
-$ATTRACTOR run pipelines/<EPIC_ID>.dot -w .
+pas run pipelines/<EPIC_ID>.dot -w .
 ```
 
 There's also a meta-pipeline that chains the full workflow with human review gates:
 
 ```bash
-$ATTRACTOR run templates/plan-to-execute.dot -w .
+pas run templates/plan-to-execute.dot -w .
 ```
 
 ### Example

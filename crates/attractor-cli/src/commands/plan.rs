@@ -15,12 +15,12 @@ pub async fn cmd_plan(
     let (template_content, default_output) = if prd {
         (
             include_str!("../../../../templates/prd-template.md"),
-            std::path::Path::new(".attractor/prd.md"),
+            std::path::Path::new(".pas/prd.md"),
         )
     } else {
         (
             include_str!("../../../../templates/spec-template.md"),
-            std::path::Path::new(".attractor/spec.md"),
+            std::path::Path::new(".pas/spec.md"),
         )
     };
 

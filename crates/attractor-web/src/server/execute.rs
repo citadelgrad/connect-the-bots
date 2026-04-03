@@ -31,7 +31,7 @@ fn attractor_cli_path() -> String {
 
 /// Start the full execution chain: decompose spec → scaffold pipeline → run.
 ///
-/// 1. Runs `attractor decompose {project}/.attractor/spec.md` → captures epic_id
+/// 1. Runs `attractor decompose {project}/.pas/spec.md` → captures epic_id
 /// 2. Runs `attractor scaffold <epic-id>` → captures pipeline path
 /// 3. Loads and executes pipeline with SSE streaming
 ///
@@ -54,7 +54,7 @@ pub async fn start_execution(project_id: i64) -> Result<ExecutionResponse, Serve
 
     let cli = attractor_cli_path();
     let session_id = Uuid::new_v4().to_string();
-    let spec_path = format!("{}/.attractor/spec.md", project.folder_path);
+    let spec_path = format!("{}/.pas/spec.md", project.folder_path);
     let project_dir = std::path::PathBuf::from(&project.folder_path);
 
     // Verify spec file exists

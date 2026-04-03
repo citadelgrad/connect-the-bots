@@ -3,7 +3,7 @@
 ## Synopsis
 
 ```
-attractor-cli [OPTIONS] <COMMAND>
+pas [OPTIONS] <COMMAND>
 ```
 
 ## Global Options
@@ -21,7 +21,7 @@ attractor-cli [OPTIONS] <COMMAND>
 Parses the DOT file, validates it, and executes each node sequentially. Each `box` node spawns a Claude Code session with the node's prompt.
 
 ```
-attractor-cli run <PIPELINE> [OPTIONS]
+pas run <PIPELINE> [OPTIONS]
 ```
 
 #### Arguments
@@ -35,7 +35,7 @@ attractor-cli run <PIPELINE> [OPTIONS]
 | Option | Short | Default | Description |
 |--------|-------|---------|-------------|
 | `--workdir <DIR>` | `-w` | current directory | Working directory for Claude Code sessions. Each node's `claude -p` runs in this directory, so file paths in prompts are relative to it. |
-| `--logs <DIR>` | `-l` | `.attractor/logs` | Directory for log output. |
+| `--logs <DIR>` | `-l` | `.pas/logs` | Directory for log output. |
 | `--dry-run` | — | false | Parse and validate the pipeline without executing any nodes. No Claude Code sessions are spawned, no cost incurred. |
 | `--max-budget-usd <AMOUNT>` | — | unlimited | Maximum total spend across all nodes. Pipeline aborts with an error if exceeded. **Strongly recommended for pipelines with loops.** |
 | `--max-steps <COUNT>` | — | 200 | Maximum number of node executions before aborting. Prevents runaway loops. A 6-node pipeline that loops 3 times = 18 steps. |
@@ -63,7 +63,7 @@ Prints:
 Runs all 11 lint rules against the pipeline without executing it. Useful for checking syntax and structure before committing a dot file.
 
 ```
-attractor-cli validate <PIPELINE>
+pas validate <PIPELINE>
 ```
 
 #### Arguments
@@ -99,7 +99,7 @@ If issues found:
 Displays the pipeline structure: name, goal, node count, edge count, start/exit nodes, and a list of all nodes with their shapes and types.
 
 ```
-attractor-cli info <PIPELINE>
+pas info <PIPELINE>
 ```
 
 #### Arguments
@@ -132,7 +132,7 @@ Nodes:
 Creates a PRD (product requirements document) or technical specification from a template. Optionally uses Claude to generate content from a one-line description.
 
 ```
-attractor-cli plan [OPTIONS]
+pas plan [OPTIONS]
 ```
 
 #### Options
@@ -142,7 +142,7 @@ attractor-cli plan [OPTIONS]
 | `--prd` | One of `--prd`/`--spec` | — | Generate a PRD document |
 | `--spec` | One of `--prd`/`--spec` | — | Generate a technical specification |
 | `--from-prompt <DESC>` | No | — | Use Claude to generate the document from this description instead of copying the blank template |
-| `--output <PATH>` | No | `.attractor/prd.md` or `.attractor/spec.md` | Output file path |
+| `--output <PATH>` | No | `.pas/prd.md` or `.pas/spec.md` | Output file path |
 
 #### Output
 
@@ -152,13 +152,13 @@ Copies the template or generates content and writes to the output path. Prints n
 
 ```bash
 # Copy blank PRD template for manual editing
-attractor-cli plan --prd
+pas plan --prd
 
 # Generate a PRD from a description
-attractor-cli plan --prd --from-prompt "Add OAuth2 authentication with Google and GitHub providers"
+pas plan --prd --from-prompt "Add OAuth2 authentication with Google and GitHub providers"
 
 # Generate a spec to a custom path
-attractor-cli plan --spec --output docs/specs/auth-spec.md
+pas plan --spec --output docs/specs/auth-spec.md
 ```
 
 ---
@@ -168,7 +168,7 @@ attractor-cli plan --spec --output docs/specs/auth-spec.md
 Reads a technical specification file and uses Claude to generate beads CLI commands that create an epic, child tasks, and dependencies.
 
 ```
-attractor-cli decompose <SPEC_PATH> [OPTIONS]
+pas decompose <SPEC_PATH> [OPTIONS]
 ```
 
 #### Arguments
@@ -191,30 +191,30 @@ Creates a beads epic with child tasks and dependencies. Prints the epic ID, task
 
 ```bash
 # Preview what would be created
-attractor-cli decompose .attractor/spec.md --dry-run
+pas decompose .pas/spec.md --dry-run
 
 # Create the epic and tasks
-attractor-cli decompose .attractor/spec.md
+pas decompose .pas/spec.md
 
 # Decompose a spec from a custom path
-attractor-cli decompose docs/specs/auth-spec.md
+pas decompose docs/specs/auth-spec.md
 ```
 
 ---
 
 ### `scaffold` — Generate pipeline from beads epic
 
-Creates an attractor pipeline DOT file from a beads epic. The pipeline iterates through all child tasks of the epic, implementing each one.
+Creates a pipeline DOT file from a beads epic. The pipeline iterates through all child tasks of the epic, implementing each one.
 
 ```
-attractor-cli scaffold <EPIC_ID> [OPTIONS]
+pas scaffold <EPIC_ID> [OPTIONS]
 ```
 
 #### Arguments
 
 | Argument | Required | Description |
 |----------|----------|-------------|
-| `EPIC_ID` | Yes | Beads epic ID (e.g., `attractor-asr`) |
+| `EPIC_ID` | Yes | Beads epic ID (e.g., `beads-asr`) |
 
 #### Options
 
@@ -230,13 +230,13 @@ Generates a DOT pipeline file from the `epic-runner` template with the epic ID s
 
 ```bash
 # Scaffold a pipeline for an epic
-attractor-cli scaffold attractor-asr
+pas scaffold attractor-asr
 
 # Scaffold to a custom path
-attractor-cli scaffold attractor-asr --output pipelines/auth-feature.dot
+pas scaffold attractor-asr --output pipelines/auth-feature.dot
 
 # Then run it
-attractor-cli run pipelines/attractor-asr.dot -w .
+pas run pipelines/attractor-asr.dot -w .
 ```
 
 ---
@@ -246,7 +246,7 @@ attractor-cli run pipelines/attractor-asr.dot -w .
 ### Run with a budget limit (recommended for loops)
 
 ```bash
-attractor-cli run pipelines/epic-runner.dot -w . --max-budget-usd 10.00
+pas run pipelines/epic-runner.dot -w . --max-budget-usd 10.00
 ```
 
 If total spend across all nodes exceeds $10, the pipeline stops with an error. Prevents a looping pipeline from running up a massive bill overnight.
@@ -254,7 +254,7 @@ If total spend across all nodes exceeds $10, the pipeline stops with an error. P
 ### Run with a step limit
 
 ```bash
-attractor-cli run pipelines/epic-runner.dot -w . --max-steps 50
+pas run pipelines/epic-runner.dot -w . --max-steps 50
 ```
 
 Limits the pipeline to 50 node executions. For an epic runner with ~7 nodes per loop, this allows ~7 iterations before stopping. The default is 200 steps.
@@ -262,7 +262,7 @@ Limits the pipeline to 50 node executions. For an epic runner with ~7 nodes per 
 ### Run with both limits (safest for unattended runs)
 
 ```bash
-attractor-cli run pipelines/epic-runner.dot -w . --max-budget-usd 20.00 --max-steps 100
+pas run pipelines/epic-runner.dot -w . --max-budget-usd 20.00 --max-steps 100
 ```
 
 The pipeline stops at whichever limit is hit first.
@@ -270,7 +270,7 @@ The pipeline stops at whichever limit is hit first.
 ### Run a pipeline in your project directory
 
 ```bash
-attractor-cli run pipelines/fix-bug.dot -w .
+pas run pipelines/fix-bug.dot -w .
 ```
 
 The `-w .` sets the working directory to the current directory. Claude Code can read, edit, and create files relative to this path.
@@ -278,7 +278,7 @@ The `-w .` sets the working directory to the current directory. Claude Code can 
 ### Run a pipeline for a different project
 
 ```bash
-attractor-cli run ~/attractor-pipelines/deploy-check.dot -w ~/projects/my-app
+pas run ~/pipelines/deploy-check.dot -w ~/projects/my-app
 ```
 
 The pipeline file and working directory don't need to be in the same place.
@@ -286,8 +286,8 @@ The pipeline file and working directory don't need to be in the same place.
 ### Validate before running
 
 ```bash
-attractor-cli validate pipelines/new-feature.dot && \
-attractor-cli run pipelines/new-feature.dot -w .
+pas validate pipelines/new-feature.dot && \
+pas run pipelines/new-feature.dot -w .
 ```
 
 Only runs if validation passes.
@@ -295,7 +295,7 @@ Only runs if validation passes.
 ### Inspect a pipeline to see its structure
 
 ```bash
-attractor-cli info pipelines/epic-runner.dot
+pas info pipelines/epic-runner.dot
 ```
 
 Quick way to see the nodes and verify the graph shape before running.
@@ -303,7 +303,7 @@ Quick way to see the nodes and verify the graph shape before running.
 ### Debug a failing pipeline
 
 ```bash
-attractor-cli -v run pipelines/fix-bug.dot -w .
+pas -v run pipelines/fix-bug.dot -w .
 ```
 
 The `-v` flag enables debug logging. You'll see:
@@ -315,7 +315,7 @@ The `-v` flag enables debug logging. You'll see:
 ### Dry run to verify parsing
 
 ```bash
-attractor-cli run pipelines/complex-feature.dot --dry-run
+pas run pipelines/complex-feature.dot --dry-run
 ```
 
 Parses and validates the pipeline, prints the structure, but doesn't spawn any Claude Code sessions. Zero cost.
@@ -325,16 +325,16 @@ Parses and validates the pipeline, prints the structure, but doesn't spawn any C
 Add to your shell profile (`~/.zshrc` or `~/.bashrc`):
 
 ```bash
-alias attractor='/Volumes/qwiizlab/projects/attractor/target/release/attractor-cli'
+alias pas='~/.local/bin/pas'
 ```
 
 Then:
 
 ```bash
 cd ~/projects/my-app
-attractor run pipelines/fix-auth.dot -w .
-attractor validate pipelines/new-feature.dot
-attractor info pipelines/deploy.dot
+pas run pipelines/fix-auth.dot -w .
+pas validate pipelines/new-feature.dot
+pas info pipelines/deploy.dot
 ```
 
 ### Pipeline for a beads issue
@@ -344,20 +344,20 @@ attractor info pipelines/deploy.dot
 bd show baseball-v3-vfd5
 
 # Run the pipeline that fixes it
-attractor run pipelines/fix-sync-partial-failure.dot -w ~/gt/baseball
+pas run pipelines/fix-sync-partial-failure.dot -w ~/gt/baseball
 ```
 
 ### Process an entire epic
 
 ```bash
 # Copy the epic runner template
-cp /Volumes/qwiizlab/projects/attractor/docs/examples/epic-runner.dot pipelines/run-epic.dot
+cp /Volumes/qwiizlab/projects/connect-the-bots/docs/examples/epic-runner.dot pipelines/run-epic.dot
 
 # Replace EPIC_ID with your epic
 sed -i '' 's/EPIC_ID/baseball-v3-8xey/g' pipelines/run-epic.dot
 
 # Run it — loops through all child tasks
-attractor run pipelines/run-epic.dot -w .
+pas run pipelines/run-epic.dot -w .
 ```
 
 ### Chain validate + run in CI or scripts
@@ -370,10 +370,10 @@ PIPELINE="$1"
 WORKDIR="${2:-.}"
 
 echo "Validating $PIPELINE..."
-attractor validate "$PIPELINE"
+pas validate "$PIPELINE"
 
 echo "Running $PIPELINE in $WORKDIR..."
-attractor run "$PIPELINE" -w "$WORKDIR"
+pas run "$PIPELINE" -w "$WORKDIR"
 ```
 
 Usage: `./run-pipeline.sh pipelines/fix-bug.dot ~/projects/my-app`
@@ -382,29 +382,29 @@ Usage: `./run-pipeline.sh pipelines/fix-bug.dot ~/projects/my-app`
 
 ```bash
 # Step 1: Generate a PRD from a description
-attractor-cli plan --prd --from-prompt "Add real-time notifications via WebSockets"
+pas plan --prd --from-prompt "Add real-time notifications via WebSockets"
 
-# Step 2: Review and edit .attractor/prd.md manually
+# Step 2: Review and edit .pas/prd.md manually
 
 # Step 3: Generate a spec from a description (or copy template and edit)
-attractor-cli plan --spec --from-prompt "Add real-time notifications via WebSockets"
+pas plan --spec --from-prompt "Add real-time notifications via WebSockets"
 
-# Step 4: Review and edit .attractor/spec.md manually
+# Step 4: Review and edit .pas/spec.md manually
 
 # Step 5: Decompose spec into beads epic + tasks
-attractor-cli decompose .attractor/spec.md
+pas decompose .pas/spec.md
 
 # Step 6: Scaffold pipeline from the epic
-attractor-cli scaffold <EPIC_ID>
+pas scaffold <EPIC_ID>
 
 # Step 7: Run the pipeline
-attractor-cli run pipelines/<EPIC_ID>.dot -w .
+pas run pipelines/<EPIC_ID>.dot -w .
 ```
 
 ### Run the meta-pipeline (automated full workflow)
 
 ```bash
-attractor-cli run templates/plan-to-execute.dot -w .
+pas run templates/plan-to-execute.dot -w .
 ```
 
 The meta-pipeline chains all planning steps with human review gates. It generates PRD, pauses for review, generates spec, pauses for review, decomposes into beads, scaffolds the pipeline, validates, and executes.
@@ -412,8 +412,8 @@ The meta-pipeline chains all planning steps with human review gates. It generate
 ### Compare two pipelines
 
 ```bash
-attractor info pipelines/v1.dot
-attractor info pipelines/v2.dot
+pas info pipelines/v1.dot
+pas info pipelines/v2.dot
 ```
 
 Quick way to compare node counts and structure between pipeline revisions.
@@ -428,7 +428,7 @@ Quick way to compare node counts and structure between pipeline revisions.
 
 ### Optional
 
-- **`RUST_LOG`** — Override log level (e.g. `RUST_LOG=debug attractor-cli run ...`). The `-v` flag sets this to `debug` automatically.
+- **`RUST_LOG`** — Override log level (e.g. `RUST_LOG=debug pas run ...`). The `-v` flag sets this to `debug` automatically.
 
 ---
 

@@ -1,6 +1,6 @@
-# Task Verification in Attractor
+# Task Verification in PAS
 
-How Attractor verifies that pipeline nodes (agent tasks) actually completed — and completed correctly. Verification is layered, moving from basic execution checks to deep logic validation.
+How PAS verifies that pipeline nodes (agent tasks) actually completed — and completed correctly. Verification is layered, moving from basic execution checks to deep logic validation.
 
 ---
 
@@ -79,7 +79,7 @@ If `test` fails, the pipeline loops back to `implement`. On the next pass, `impl
 
 ## 4. Conditional Edge Routing (Multi-Path Validation)
 
-Instead of binary pass/fail, Attractor supports **condition-based routing** that lets the pipeline take different verification paths based on node outcomes or context values.
+Instead of binary pass/fail, PAS supports **condition-based routing** that lets the pipeline take different verification paths based on node outcomes or context values.
 
 ### Edge conditions
 

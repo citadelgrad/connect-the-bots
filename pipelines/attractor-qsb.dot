@@ -21,7 +21,7 @@ Find the first ready (unblocked, open) child task of epic attractor-qsb.
 
 If you find one:
 - Run: bd update <task-id> --status=in_progress
-- Write the task ID and full description to .attractor/current_task.md
+- Write the task ID and full description to .pas/current_task.md
 - Respond with MORE on the last line
 
 If all child tasks are closed (no more ready tasks for this epic):
@@ -33,7 +33,7 @@ If all child tasks are closed (no more ready tasks for this epic):
         shape="box"
         label="Investigate"
         allowed_tools="Read,Grep,Glob,Bash(bd:*)"
-        prompt="Read .attractor/current_task.md to get the current task ID and description.
+        prompt="Read .pas/current_task.md to get the current task ID and description.
 Run bd show <task-id> to get full details.
 
 Investigate the codebase to understand what needs to change:
@@ -41,7 +41,7 @@ Investigate the codebase to understand what needs to change:
 - Understand the current behavior
 - Identify what needs to change
 
-Write your findings to .attractor/investigation.md including:
+Write your findings to .pas/investigation.md including:
 - Files to modify
 - Current behavior
 - Required changes
@@ -52,7 +52,7 @@ Write your findings to .attractor/investigation.md including:
     implement [
         shape="box"
         label="Implement"
-        prompt="Read .attractor/current_task.md for the task and .attractor/investigation.md for the plan.
+        prompt="Read .pas/current_task.md for the task and .pas/investigation.md for the plan.
 Implement the changes described. Follow existing code patterns and conventions.
 Keep changes minimal and focused on the task requirements."
     ]
@@ -61,10 +61,10 @@ Keep changes minimal and focused on the task requirements."
     run_tests [
         shape="box"
         label="Run Tests"
-        prompt="Read .attractor/current_task.md to understand what was changed.
+        prompt="Read .pas/current_task.md to understand what was changed.
 Run the relevant test suite for the modified code.
 If tests fail, fix the issues and re-run until green.
-Write the test results to .attractor/test-results.md"
+Write the test results to .pas/test-results.md"
     ]
 
     // --- Verify ---
@@ -72,11 +72,11 @@ Write the test results to .attractor/test-results.md"
         shape="diamond"
         label="Verify"
         node_type="conditional"
-        prompt="Read .attractor/current_task.md for the task requirements.
+        prompt="Read .pas/current_task.md for the task requirements.
 Check the changes:
 1. Review the git diff
 2. Run the linter on changed files
-3. Verify tests pass (read .attractor/test-results.md)
+3. Verify tests pass (read .pas/test-results.md)
 4. Check that the task's acceptance criteria are met
 
 If everything looks good, respond with PASS on the last line.
@@ -86,7 +86,7 @@ If there are problems, respond with FAIL on the last line."
     fixup [
         shape="box"
         label="Fix Issues"
-        prompt="Read .attractor/current_task.md and .attractor/investigation.md for context.
+        prompt="Read .pas/current_task.md and .pas/investigation.md for context.
 The verification step found problems. Fix any failing tests, lint errors, or unmet acceptance criteria.
 Re-run tests after fixing."
     ]
@@ -96,7 +96,7 @@ Re-run tests after fixing."
         shape="box"
         label="Close Task"
         allowed_tools="Bash(bd:*),Bash(git:*)"
-        prompt="Read .attractor/current_task.md to get the task ID.
+        prompt="Read .pas/current_task.md to get the task ID.
 1. Stage changes: git add -A
 2. Commit with a descriptive message referencing the task ID
 3. Close the task: bd close <task-id> --reason='Implemented successfully'

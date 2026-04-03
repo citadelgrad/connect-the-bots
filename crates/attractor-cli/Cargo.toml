@@ -3,7 +3,11 @@ name = "attractor-cli"
 version.workspace = true
 edition = "2021"
 license.workspace = true
-description = "CLI binary for running and validating Attractor pipelines"
+description = "Pascal's Discrete Attractor — DOT-based pipeline runner for AI workflows"
+
+[[bin]]
+name = "pas"
+path = "src/main.rs"
 
 [dependencies]
 attractor-types = { path = "../attractor-types" }

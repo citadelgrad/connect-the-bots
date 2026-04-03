@@ -1,4 +1,4 @@
-//! File watcher for `.attractor/` directory.
+//! File watcher for `.pas/` directory.
 //!
 //! Watches for changes to `prd.md` and `spec.md` and pushes updates
 //! via SSE to the document viewer.
@@ -25,13 +25,13 @@ pub struct DocumentWatcher {
 }
 
 impl DocumentWatcher {
-    /// Start watching the `.attractor/` directory for PRD/Spec changes.
+    /// Start watching the `.pas/` directory for PRD/Spec changes.
     ///
     /// File updates are broadcast via the channel for SSE streaming, and also
     /// persisted to SQLite via the provided database pool.
     ///
     /// # Arguments
-    /// - `watch_dir`: Path to the .attractor directory to watch
+    /// - `watch_dir`: Path to the .pas directory to watch
     /// - `db`: SQLite connection pool for persisting document changes
     /// - `project_id`: Database ID of the project being watched
     pub fn new(
@@ -103,7 +103,7 @@ impl DocumentWatcher {
                 }
             })?;
 
-        // Create .attractor dir if it doesn't exist
+        // Create .pas dir if it doesn't exist
         std::fs::create_dir_all(&watch_dir).ok();
 
         watcher.watch(&watch_dir, RecursiveMode::NonRecursive)?;
@@ -139,7 +139,7 @@ fn get_or_create_watcher(
     }
 
     // Create new watcher for this project
-    let watch_dir = PathBuf::from(folder_path).join(".attractor");
+    let watch_dir = PathBuf::from(folder_path).join(".pas");
     let watcher = Arc::new(
         DocumentWatcher::new(watch_dir, state.db.clone(), project_id)
             .map_err(|e| format!("Failed to create document watcher: {}", e))?,

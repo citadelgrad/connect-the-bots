@@ -18,19 +18,19 @@ pub struct CachedDoc {
 
 /// Initialize the SQLite database and return a connection pool.
 ///
-/// Creates `~/.attractor/web.db` if it doesn't exist, along with the directory.
+/// Creates `~/.pas/web.db` if it doesn't exist, along with the directory.
 /// Runs schema creation (idempotent).
 pub async fn init_db() -> Result<SqlitePool, sqlx::Error> {
-    // Determine database path: ~/.attractor/web.db
+    // Determine database path: ~/.pas/web.db
     let home_dir = std::env::var("HOME")
         .expect("HOME environment variable not set");
-    let attractor_dir = PathBuf::from(home_dir).join(".attractor");
+    let pas_dir = PathBuf::from(home_dir).join(".pas");
 
     // Create directory if it doesn't exist
-    std::fs::create_dir_all(&attractor_dir)
-        .expect("Failed to create ~/.attractor directory");
+    std::fs::create_dir_all(&pas_dir)
+        .expect("Failed to create ~/.pas directory");
 
-    let db_path = attractor_dir.join("web.db");
+    let db_path = pas_dir.join("web.db");
     let db_url = format!("sqlite:{}?mode=rwc", db_path.display());
 
     // Create connection pool

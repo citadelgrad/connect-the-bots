@@ -258,7 +258,7 @@ pub async fn cmd_decompose(spec_path: &std::path::Path, dry_run: bool) -> anyhow
 
     println!("\nNext steps:");
     println!("1. Review tasks: bd list");
-    println!("2. Generate pipeline: attractor scaffold {}", epic_id);
+    println!("2. Generate pipeline: pas scaffold {}", epic_id);
 
     Ok(())
 }

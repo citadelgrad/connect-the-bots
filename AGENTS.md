@@ -1,4 +1,4 @@
-# Attractor - Agent Instructions
+# PAS (Pascal's Discrete Attractor) - Agent Instructions
 
 ## Build & Test
 
@@ -10,7 +10,7 @@ cargo clippy --workspace       # Lint
 cargo fmt --all -- --check     # Format check
 ```
 
-The CLI binary is `attractor`. Install with `cargo install --path crates/attractor-cli`.
+The CLI binary is `pas`. Install with `./install.sh` or `cargo install --path crates/attractor-cli`.
 
 ## Versioning
 
