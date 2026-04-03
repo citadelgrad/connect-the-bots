@@ -5,7 +5,7 @@ mod commands;
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
-use commands::{cmd_decompose, cmd_generate, cmd_info, cmd_plan, cmd_run, cmd_scaffold, cmd_validate, validate_decomposition};
+use commands::{cmd_decompose, cmd_generate, cmd_generate_dir, cmd_info, cmd_launch, cmd_plan, cmd_run, cmd_run_dir, cmd_scaffold, cmd_validate, validate_decomposition};
 
 #[derive(Parser)]
 #[command(name = "pas", version, about = "Pascal's Discrete Attractor — DOT-based pipeline runner for AI workflows")]
@@ -20,9 +20,17 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Run a pipeline from a .dot file
+    /// Run a pipeline from a .dot file or a directory of .dot files.
+    ///
+    /// When given a directory, all *.dot files are collected and run
+    /// sequentially in lexical order. Use zero-padded names to control
+    /// execution order (e.g. phase-01.dot, phase-02.dot, phase-11.dot).
+    ///
+    /// Checkpoints are saved automatically after each node. If a run is
+    /// interrupted, re-running the same command resumes from the last
+    /// completed node. Use --fresh to discard checkpoints and start over.
     Run {
-        /// Path to the pipeline .dot file
+        /// Path to a .dot file, or a directory of .dot files (sorted lexically)
         pipeline: PathBuf,
 
         /// Working directory for tool execution
@@ -44,6 +52,10 @@ enum Commands {
         /// Maximum number of node executions before aborting. Prevents runaway loops. Default: 200.
         #[arg(long, default_value = "200")]
         max_steps: u64,
+
+        /// Ignore checkpoint and start fresh
+        #[arg(long)]
+        fresh: bool,
     },
 
     /// Validate a pipeline .dot file
@@ -101,9 +113,22 @@ enum Commands {
         output: Option<PathBuf>,
     },
 
-    /// Generate a pipeline directly from PRD and/or spec files (no beads)
+    /// Generate pipeline .dot files from spec (and optional PRD) files.
+    ///
+    /// Single-file mode:
+    ///   pas generate my-spec.md
+    ///   pas generate my-prd.md my-spec.md
+    ///
+    /// Directory mode:
+    ///   pas generate docs/implementation/
+    ///
+    /// In directory mode, files ending in -spec.md are discovered and sorted
+    /// lexically. Each spec is paired with a matching -prd.md file if one
+    /// exists (e.g. auth-spec.md pairs with auth-prd.md). One .dot pipeline
+    /// is generated per spec. Use zero-padded prefixes to control order
+    /// (e.g. phase-01-spec.md, phase-02-spec.md).
     Generate {
-        /// Input files: spec only, or prd then spec (positional)
+        /// Spec file, prd then spec (positional), or a directory of *-spec.md files
         #[arg(value_name = "FILE")]
         files: Vec<PathBuf>,
 
@@ -115,9 +140,52 @@ enum Commands {
         #[arg(long)]
         spec: Option<PathBuf>,
 
-        /// Output .dot file path (default: pipelines/<spec-stem>.dot)
+        /// Output .dot file or directory (default: pipelines/<spec-stem>.dot)
         #[arg(short, long)]
         output: Option<PathBuf>,
+    },
+
+    /// Generate, validate, and run pipelines end-to-end.
+    ///
+    /// Takes a directory containing spec files (and optional PRD files):
+    ///   1. Discovers *-spec.md files, pairs each with its *-prd.md
+    ///   2. Generates .dot pipelines (one per spec, sorted lexically)
+    ///   3. Validates all generated .dot files — stops if any fail
+    ///   4. Runs pipelines sequentially with checkpoint/resume
+    ///
+    /// Spec files must end in -spec.md. PRD files are paired by replacing
+    /// -spec with -prd (e.g. auth-spec.md + auth-prd.md). PRDs are optional
+    /// but recommended — they provide business context to the generator.
+    ///
+    /// Use zero-padded prefixes to control execution order:
+    ///   phase-01-spec.md, phase-02-spec.md, ..., phase-11-spec.md
+    Launch {
+        /// Directory containing *-spec.md (required) and *-prd.md (optional) files
+        docs_dir: PathBuf,
+
+        /// Working directory for tool execution
+        #[arg(short, long)]
+        workdir: Option<PathBuf>,
+
+        /// Output directory for generated .dot files (default: pipelines/)
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+
+        /// Don't actually call LLMs during run (dry run)
+        #[arg(long)]
+        dry_run: bool,
+
+        /// Maximum total spend across all nodes (USD)
+        #[arg(long)]
+        max_budget_usd: Option<f64>,
+
+        /// Maximum number of node executions per pipeline. Default: 200.
+        #[arg(long, default_value = "200")]
+        max_steps: u64,
+
+        /// Ignore checkpoints and start fresh
+        #[arg(long)]
+        fresh: bool,
     },
 }
 
@@ -139,8 +207,13 @@ async fn main() -> anyhow::Result<()> {
             dry_run,
             max_budget_usd,
             max_steps,
+            fresh,
         } => {
-            cmd_run(&pipeline, workdir.as_deref(), logs.as_deref(), dry_run, max_budget_usd, max_steps).await?;
+            if pipeline.is_dir() {
+                cmd_run_dir(&pipeline, workdir.as_deref(), dry_run, max_budget_usd, max_steps, fresh).await?;
+            } else {
+                cmd_run(&pipeline, workdir.as_deref(), logs.as_deref(), dry_run, max_budget_usd, max_steps, fresh).await?;
+            }
         }
         Commands::Validate { pipeline } => {
             cmd_validate(&pipeline)?;
@@ -163,37 +236,56 @@ async fn main() -> anyhow::Result<()> {
             cmd_scaffold(&epic_id, output.as_deref()).await?;
         }
         Commands::Generate { files, prd, spec, output } => {
-            // Resolve spec and prd from positional args and/or named flags.
-            // Named flags take precedence over positional args.
-            let (resolved_prd, resolved_spec) = match (prd, spec, files.len()) {
-                // Both named flags provided
-                (Some(p), Some(s), _) => (Some(p), s),
-                // Only --spec provided
-                (None, Some(s), _) => (None, s),
-                // Only --prd provided + one positional (the spec)
-                (Some(p), None, 1) => (Some(p), files[0].clone()),
-                // No flags, one positional = spec only
-                (None, None, 1) => (None, files[0].clone()),
-                // No flags, two positional = prd then spec
-                (None, None, 2) => (Some(files[0].clone()), files[1].clone()),
-                // --prd flag + no positional and no --spec
-                (Some(_), None, 0) => {
-                    anyhow::bail!("Spec file is required. Usage: pas generate [--prd PRD] <SPEC>");
-                }
-                // No args at all
-                (None, None, 0) => {
-                    anyhow::bail!("Spec file is required. Usage: pas generate [PRD] <SPEC>");
-                }
-                _ => {
-                    anyhow::bail!(
-                        "Too many arguments. Usage:\n  \
-                         pas generate <SPEC>\n  \
-                         pas generate <PRD> <SPEC>\n  \
-                         pas generate --prd <PRD> --spec <SPEC>"
-                    );
-                }
-            };
-            cmd_generate(resolved_prd.as_deref(), &resolved_spec, output.as_deref(), cli.verbose).await?;
+            // Check if the single positional arg is a directory
+            if files.len() == 1 && files[0].is_dir() && prd.is_none() && spec.is_none() {
+                cmd_generate_dir(&files[0], output.as_deref(), cli.verbose).await?;
+            } else {
+                // Resolve spec and prd from positional args and/or named flags.
+                let (resolved_prd, resolved_spec) = match (prd, spec, files.len()) {
+                    (Some(p), Some(s), _) => (Some(p), s),
+                    (None, Some(s), _) => (None, s),
+                    (Some(p), None, 1) => (Some(p), files[0].clone()),
+                    (None, None, 1) => (None, files[0].clone()),
+                    (None, None, 2) => (Some(files[0].clone()), files[1].clone()),
+                    (Some(_), None, 0) => {
+                        anyhow::bail!("Spec file is required. Usage: pas generate [--prd PRD] <SPEC>");
+                    }
+                    (None, None, 0) => {
+                        anyhow::bail!("Spec file is required. Usage: pas generate [PRD] <SPEC>");
+                    }
+                    _ => {
+                        anyhow::bail!(
+                            "Too many arguments. Usage:\n  \
+                             pas generate <SPEC>\n  \
+                             pas generate <PRD> <SPEC>\n  \
+                             pas generate --prd <PRD> --spec <SPEC>\n  \
+                             pas generate <DIRECTORY>"
+                        );
+                    }
+                };
+                cmd_generate(resolved_prd.as_deref(), &resolved_spec, output.as_deref(), cli.verbose).await?;
+            }
+        }
+        Commands::Launch {
+            docs_dir,
+            workdir,
+            output,
+            dry_run,
+            max_budget_usd,
+            max_steps,
+            fresh,
+        } => {
+            cmd_launch(
+                &docs_dir,
+                output.as_deref(),
+                workdir.as_deref(),
+                dry_run,
+                max_budget_usd,
+                max_steps,
+                fresh,
+                cli.verbose,
+            )
+            .await?;
         }
     }
 

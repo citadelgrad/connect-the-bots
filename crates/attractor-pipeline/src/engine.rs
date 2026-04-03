@@ -3,10 +3,11 @@
 //! Implements the 5-phase lifecycle: parse, validate, initialize, execute, finalize.
 
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use attractor_types::{AttractorError, Context, Outcome, Result, StageStatus};
 
+use crate::checkpoint::{clear_checkpoint, load_checkpoint, save_checkpoint, PipelineCheckpoint};
 use crate::edge_selection::select_edge;
 use crate::goal_gate::enforce_goal_gates;
 use crate::graph::PipelineGraph;
@@ -89,6 +90,31 @@ impl PipelineExecutor {
         graph: &PipelineGraph,
         context: Context,
     ) -> Result<PipelineResult> {
+        self.run_inner(graph, context, None).await
+    }
+
+    /// Run the pipeline with checkpoint-based resume.
+    ///
+    /// If `logs_root` points to a directory containing `checkpoint.json`,
+    /// execution resumes from the last saved node. A checkpoint is saved
+    /// after every node completion and cleared on successful finish.
+    pub async fn run_with_checkpoint(
+        &self,
+        graph: &PipelineGraph,
+        context: Context,
+        logs_root: &Path,
+    ) -> Result<PipelineResult> {
+        self.run_inner(graph, context, Some(logs_root)).await
+    }
+
+    /// Core execution loop. When `logs_root` is `Some`, checkpoints are
+    /// saved after each node and an existing checkpoint triggers resume.
+    async fn run_inner(
+        &self,
+        graph: &PipelineGraph,
+        context: Context,
+        logs_root: Option<&Path>,
+    ) -> Result<PipelineResult> {
         // Phase 2: Validate
         validate_or_raise(graph)?;
 
@@ -99,11 +125,33 @@ impl PipelineExecutor {
         let mut completed_nodes: Vec<String> = Vec::new();
         let mut node_outcomes: HashMap<String, Outcome> = HashMap::new();
 
-        // Phase 4: Execute
+        // Phase 4: Execute — check for checkpoint to resume from
         let start = graph.start_node().ok_or_else(|| {
             AttractorError::ValidationError("No start node found".into())
         })?;
         let mut current_node = start;
+
+        if let Some(logs) = logs_root {
+            if let Some(cp) = load_checkpoint(logs).await? {
+                tracing::info!(
+                    node = %cp.current_node_id,
+                    completed = cp.completed_nodes.len(),
+                    "Resuming from checkpoint"
+                );
+                // Restore context
+                context.apply_updates(cp.context_snapshot).await;
+                // Restore completed state
+                completed_nodes = cp.completed_nodes;
+                node_outcomes = cp.node_outcomes;
+                // Jump to the node that was about to execute
+                current_node = graph.node(&cp.current_node_id).ok_or_else(|| {
+                    AttractorError::Other(format!(
+                        "Checkpoint node '{}' not found in graph — was the .dot file changed?",
+                        cp.current_node_id
+                    ))
+                })?;
+            }
+        }
 
         // Safety limits from context (set by CLI flags)
         let max_budget: f64 = context
@@ -243,6 +291,17 @@ impl PipelineExecutor {
                     current_node = graph.node(&next_id).ok_or_else(|| {
                         AttractorError::Other(format!("Edge target '{}' not found", next_id))
                     })?;
+
+                    // Save checkpoint: the *next* node to execute
+                    if let Some(logs) = logs_root {
+                        let cp = PipelineCheckpoint::new(
+                            current_node.id.clone(),
+                            completed_nodes.clone(),
+                            node_outcomes.clone(),
+                            context.snapshot().await,
+                        );
+                        save_checkpoint(&cp, logs).await?;
+                    }
                 }
                 None => {
                     // No outgoing edge and not an exit node
@@ -258,7 +317,10 @@ impl PipelineExecutor {
             }
         }
 
-        // Phase 5: Finalize
+        // Phase 5: Finalize — clear checkpoint on success
+        if let Some(logs) = logs_root {
+            clear_checkpoint(logs).await?;
+        }
         let final_context = context.snapshot().await;
         Ok(PipelineResult {
             completed_nodes,

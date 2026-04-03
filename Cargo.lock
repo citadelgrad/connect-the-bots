@@ -133,7 +133,7 @@ checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
 
 [[package]]
 name = "attractor-agent"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "async-trait",
  "attractor-llm",
@@ -152,7 +152,7 @@ dependencies = [
 
 [[package]]
 name = "attractor-cli"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "anyhow",
  "attractor-agent",
@@ -173,7 +173,7 @@ dependencies = [
 
 [[package]]
 name = "attractor-dot"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "attractor-types",
  "serde",
@@ -184,7 +184,7 @@ dependencies = [
 
 [[package]]
 name = "attractor-llm"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "async-trait",
  "attractor-types",
@@ -201,7 +201,7 @@ dependencies = [
 
 [[package]]
 name = "attractor-pipeline"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "async-trait",
  "attractor-agent",
@@ -223,7 +223,7 @@ dependencies = [
 
 [[package]]
 name = "attractor-tools"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "async-trait",
  "attractor-types",
@@ -240,7 +240,7 @@ dependencies = [
 
 [[package]]
 name = "attractor-types"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "chrono",
  "serde",
@@ -254,7 +254,7 @@ dependencies = [
 
 [[package]]
 name = "attractor-web"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "attractor-dot",
  "attractor-pipeline",

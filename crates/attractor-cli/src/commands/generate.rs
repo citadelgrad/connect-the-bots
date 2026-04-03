@@ -341,6 +341,92 @@ fn strip_code_fences(s: &str) -> String {
     }
 }
 
+/// Generate pipelines from a directory of PRD+spec pairs.
+///
+/// Scans `dir` for files matching `*-spec.md`, pairs each with a
+/// corresponding `*-prd.md` (if present), and generates one .dot file per
+/// pair.  Output names are zero-padded to sort correctly.
+pub async fn cmd_generate_dir(
+    dir: &std::path::Path,
+    output_dir: Option<&std::path::Path>,
+    verbose: bool,
+) -> anyhow::Result<Vec<std::path::PathBuf>> {
+    // Discover *-spec.md files, sorted
+    let mut specs: Vec<std::path::PathBuf> = std::fs::read_dir(dir)?
+        .filter_map(|e| e.ok())
+        .map(|e| e.path())
+        .filter(|p| {
+            p.extension().map_or(false, |ext| ext == "md")
+                && p.file_stem()
+                    .and_then(|s| s.to_str())
+                    .map_or(false, |s| s.ends_with("-spec"))
+        })
+        .collect();
+    specs.sort();
+
+    if specs.is_empty() {
+        anyhow::bail!(
+            "No *-spec.md files found in {}\n\n\
+             Spec files must have names ending in -spec.md (e.g. auth-spec.md,\n\
+             phase-01-spec.md). Each spec is paired with a matching -prd.md if\n\
+             one exists (auth-spec.md pairs with auth-prd.md). PRDs are optional.\n\n\
+             Use zero-padded prefixes to control generation order:\n\
+             \x20 phase-01-spec.md, phase-02-spec.md, ..., phase-11-spec.md",
+            dir.display()
+        );
+    }
+
+    let out_dir = output_dir
+        .map(|p| p.to_path_buf())
+        .unwrap_or_else(|| std::path::PathBuf::from("pipelines"));
+    std::fs::create_dir_all(&out_dir)?;
+
+    println!("Found {} spec(s) in {} (lexical order):", specs.len(), dir.display());
+    for spec in &specs {
+        let stem = spec.file_stem().and_then(|s| s.to_str()).unwrap_or("?");
+        let prd_stem = stem.replace("-spec", "-prd");
+        let prd_path = dir.join(format!("{}.md", prd_stem));
+        let prd_status = if prd_path.exists() { "+ PRD" } else { "no PRD" };
+        println!("  {} ({})", spec.file_name().unwrap_or_default().to_string_lossy(), prd_status);
+    }
+    println!();
+
+    let mut generated: Vec<std::path::PathBuf> = Vec::new();
+
+    for (i, spec_path) in specs.iter().enumerate() {
+        let stem = spec_path
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("pipeline");
+
+        // Pair with PRD: replace "-spec" suffix with "-prd"
+        let prd_stem = stem.replace("-spec", "-prd");
+        let prd_path = dir.join(format!("{}.md", prd_stem));
+        let prd = if prd_path.exists() {
+            Some(prd_path.as_path())
+        } else {
+            None
+        };
+
+        let output_path = out_dir.join(format!("{}.dot", stem));
+
+        println!(
+            "[{}/{}] {} {}→ {}",
+            i + 1,
+            specs.len(),
+            spec_path.file_name().unwrap_or_default().to_string_lossy(),
+            if prd.is_some() { "(with PRD) " } else { "" },
+            output_path.display()
+        );
+
+        cmd_generate(prd, spec_path, Some(&output_path), verbose).await?;
+        generated.push(output_path);
+    }
+
+    println!("\nGenerated {} pipeline(s)", generated.len());
+    Ok(generated)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
