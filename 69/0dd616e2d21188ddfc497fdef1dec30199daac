@@ -1,0 +1,55 @@
+crates/attractor-cli/src/commands/generate.rs
+  700ac32194bf1010 280-285,287,293,544,546-549
+Cargo.toml
+  700ac32194bf1010 15
+docs/cli-reference.md
+  700ac32194bf1010 205-277
+docs/guide.md
+  700ac32194bf1010 76
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "690dd616e2d21188ddfc497fdef1dec30199daac",
+  "prompts": {
+    "2a4a1b5422717264": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7a783469-9c4b-4ec3-80c8-0ef9fde3d220",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Scott Nixon",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 652,
+      "overriden_lines": 0
+    },
+    "700ac32194bf1010": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "766e2431-a1a5-4335-82a6-42eb034b62ee",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Scott Nixon",
+      "messages": [],
+      "total_additions": 89,
+      "total_deletions": 8,
+      "accepted_lines": 89,
+      "overriden_lines": 0
+    },
+    "7719aa5c30b60f3c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e4a04e86-e02a-423f-b9f9-ae87ee4d2fc4",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Scott Nixon",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 0,
+      "overriden_lines": 0
+    }
+  }
+}
