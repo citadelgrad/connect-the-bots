@@ -1,0 +1,36 @@
+crates/attractor-cli/src/commands/generate.rs.bak
+  54699824900b474c 1-638
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "151d5ab4a2d1262666a141f8e151f6d33688f805",
+  "prompts": {
+    "101c9ecbda0145b0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dd9fceaf-c1f9-4fee-89e2-6f44275b3558",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Scott Nixon",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 0,
+      "overriden_lines": 0
+    },
+    "54699824900b474c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "74084669-5e3e-4d76-8026-d85eb81ec7dd",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Scott Nixon",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 638,
+      "overriden_lines": 0
+    }
+  }
+}
