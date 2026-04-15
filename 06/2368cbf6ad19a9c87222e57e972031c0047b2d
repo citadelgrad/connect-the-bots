@@ -1,0 +1,49 @@
+docs/plans/2026-04-09-feat-reckoner-software-factory-plan.md
+  2a4a1b5422717264 1-652
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "062368cbf6ad19a9c87222e57e972031c0047b2d",
+  "prompts": {
+    "101c9ecbda0145b0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dd9fceaf-c1f9-4fee-89e2-6f44275b3558",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Scott Nixon",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 0,
+      "overriden_lines": 0
+    },
+    "2a4a1b5422717264": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7a783469-9c4b-4ec3-80c8-0ef9fde3d220",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Scott Nixon",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 652,
+      "overriden_lines": 0
+    },
+    "54699824900b474c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "74084669-5e3e-4d76-8026-d85eb81ec7dd",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Scott Nixon",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 638,
+      "overriden_lines": 0
+    }
+  }
+}
