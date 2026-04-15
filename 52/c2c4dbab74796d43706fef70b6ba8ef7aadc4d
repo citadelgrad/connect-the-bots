@@ -1,0 +1,23 @@
+.gitignore
+  101c9ecbda0145b0 6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "52c2c4dbab74796d43706fef70b6ba8ef7aadc4d",
+  "prompts": {
+    "101c9ecbda0145b0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dd9fceaf-c1f9-4fee-89e2-6f44275b3558",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Scott Nixon",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 0,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}
